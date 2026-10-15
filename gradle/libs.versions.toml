@@ -2,7 +2,7 @@
 
 kotlin = "2.4.10"
 ksp = "2.3.11"
-agp = "8.13.2"
+agp = "9.3.0"
 appcompat = "1.7.1"
 colorpicker = "1.1.0"
 constraintlayout = "2.2.1"
@@ -22,6 +22,7 @@ coroutines = "1.11.0"
 liveeventbus = "1.8.14"
 markwon = "4.6.2"
 material = "1.14.0"
+blurview = "version-3.2.0"
 media = "1.8.0"
 danmaku = "0.9.25"
 nanoHttpd = "2.3.1"
@@ -206,6 +207,7 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 #kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinxSerialization" }
 liveeventbus = { module = "com.github.michaellee123:LiveEventBus", version.ref = "liveeventbus" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
+blurview = { module = "com.github.Dimezis:BlurView", version.ref = "blurview" }
 
 htmlunit-core-js = { module = "org.htmlunit:htmlunit-core-js", version.ref = "htmlunitCoreJs" }
 

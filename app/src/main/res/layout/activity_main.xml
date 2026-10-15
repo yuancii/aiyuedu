@@ -1,26 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:clipChildren="false">
 
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/view_pager_main"
+    <eightbitlab.com.blurview.BlurTarget
+        android:id="@+id/main_blur_target"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        tools:ignore="SpeakableTextPresentCheck" />
+        android:layout_height="match_parent">
 
-    <io.legado.app.lib.theme.view.ThemeBottomNavigationVIew
-        android:id="@+id/bottom_navigation_view"
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/view_pager_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:ignore="SpeakableTextPresentCheck" />
+    </eightbitlab.com.blurview.BlurTarget>
+
+    <FrameLayout
+        android:id="@+id/bottom_navigation_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/background"
-        android:minHeight="50dp"
-        app:itemActiveIndicatorStyle="@color/transparent"
-        app:labelVisibilityMode="unlabeled"
-        app:menu="@menu/main_bnv" />
+        android:layout_gravity="bottom"
+        android:clipToPadding="false">
 
-</LinearLayout>
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/bottom_navigation_blur"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_gravity="bottom"
+            android:clipToOutline="true">
+
+            <io.legado.app.lib.theme.view.ThemeBottomNavigationVIew
+                android:id="@+id/bottom_navigation_view"
+                android:layout_width="match_parent"
+                android:layout_height="68dp"
+                android:layout_gravity="center"
+                android:minHeight="68dp"
+                app:itemIconSize="24dp"
+                app:itemPaddingTop="4dp"
+                app:itemPaddingBottom="4dp"
+                app:labelVisibilityMode="unlabeled"
+                app:menu="@menu/main_bnv" />
+        </eightbitlab.com.blurview.BlurView>
+
+    </FrameLayout>
+
+</FrameLayout>

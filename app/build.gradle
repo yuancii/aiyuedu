@@ -25,7 +25,7 @@ def version = "3." + releaseTime()
 def versionCodeValue = 30000
 // Preserve the published code at this point, then ignore GitHub wrapper merge commits.
 def versionCodeBaseCommit = '9639f027fbc8cfdf57ce136a9e0c98829a235aef'
-def versionCodeAtBase = 37540
+def versionCodeAtBase = 37543
 try {
     def gitCount = providers.exec {
         commandLine 'git', 'rev-list', "${versionCodeBaseCommit}..HEAD", '--count', '--no-merges'
@@ -64,7 +64,7 @@ android {
     }
     defaultConfig {
         applicationId "com.legado.app"
-        minSdk 23
+        minSdk 26
         targetSdk 36
         versionCode = versionCodeValue
         versionName version
@@ -130,7 +130,6 @@ android {
             manifestPlaceholders.put("app_name", "@string/app_name")
 
             applicationIdSuffix '.debug'
-            versionNameSuffix 'debug'
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'cronet-proguard-rules.pro'
         }
@@ -244,6 +243,7 @@ dependencies {
 
     //google
     implementation(libs.material)
+    implementation(libs.blurview)
     implementation(libs.flexbox)
     implementation(libs.gson)
 

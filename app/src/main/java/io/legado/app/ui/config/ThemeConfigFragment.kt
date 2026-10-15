@@ -213,6 +213,14 @@ class ThemeConfigFragment : PreferenceFragment(),
             PreferKey.bgImageN -> {
                 upPreferenceSummary(key, getPrefString(key))
             }
+
+            PreferKey.bottomBarBlur ->
+                postEvent(EventBus.BOTTOM_BAR_BLUR, getPrefInt(PreferKey.bottomBarBlur, 60))
+
+            PreferKey.bottomBarWidth,
+            PreferKey.bottomBarHeight,
+            PreferKey.bottomBarBottomOffset ->
+                postEvent(EventBus.BOTTOM_BAR_LAYOUT, true)
         }
 
     }

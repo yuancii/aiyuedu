@@ -3,11 +3,21 @@
 package io.legado.app.ui.main
 
 import android.graphics.Rect
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
+import android.view.Gravity
+import android.view.View
+import android.view.ViewOutlineProvider
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.AbsListView
+import android.widget.FrameLayout
+import android.widget.ScrollView
+import androidx.core.widget.NestedScrollView
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.core.view.doOnLayout
@@ -18,8 +28,10 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import eightbitlab.com.blurview.BlurView
 import io.legado.app.BuildConfig
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
@@ -42,6 +54,7 @@ import io.legado.app.help.update.AppUpdate
 import io.legado.app.help.update.isIgnoredAppUpdate
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
 import io.legado.app.ui.about.UpdateDialog
@@ -63,6 +76,8 @@ import io.legado.app.ui.widget.text.BadgeView
 import io.legado.app.utils.clearClip
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getClipText
+import io.legado.app.utils.getPrefBoolean
+import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.imeHeight
 import io.legado.app.utils.navigationBarHeight
@@ -71,12 +86,16 @@ import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
+import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.putPrefBoolean
+import io.legado.app.utils.putPrefInt
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import splitties.views.bottomPadding
+import java.util.WeakHashMap
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.hours
 
@@ -115,15 +134,25 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         TabFragmentPageAdapter(supportFragmentManager)
     }
     private var onUpBooksBadgeView: BadgeView? = null
+    private var bottomBarBlurConfigured = false
+    private var bottomNavigationInsetPx = 0
+    private var bottomBarContentInsetPx = 0
+    private val scrollableBottomPadding = WeakHashMap<View, Int>()
+    private val bottomBarContentLayoutListener =
+        ViewTreeObserver.OnGlobalLayoutListener {
+            applyBottomBarContentInsets(binding.viewPagerMain)
+        }
     private var lastPassphraseText: String? = null
     private var pendingPassphraseRead = false
     private var passphraseReadGeneration = 0
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        migrateBottomBarGlassDefaults()
         upBottomMenu()
         initView()
         upHomePage()
         upBottomBarSkin()
+        updateBottomBarLayout()
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
                 binding.viewPagerMain.currentItem = 0
@@ -181,6 +210,10 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     override fun onResume() {
         super.onResume()
+        // Settings are edited in another Activity, so refresh the persisted values
+        // when returning even if the in-process preference event was missed.
+        updateBottomBarLayout()
+        updateBottomBarBlur()
         if (SourceSharePassphraseImportPolicy.shouldScheduleOnResume(
                 privacyPolicyOk = LocalConfig.privacyPolicyOk
             )
@@ -261,11 +294,15 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         if (AppConfig.isEInkMode) {
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
         }
-        bottomNavigationView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
+        bottomNavigationContainer.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
             val height = windowInsets.navigationBarHeight
-            view.bottomPadding = height
+            bottomNavigationInsetPx = height
+            view.bottomPadding = height + getPrefInt(PreferKey.bottomBarBottomOffset, 16).dpToPx()
             windowInsets.inset(0, 0, 0, height)
         }
+        updateBottomBarLayout()
+        bottomNavigationContainer.doOnLayout { updateBottomBarLayout() }
+        updateBottomBarBlur()
     }
 
     /**
@@ -414,6 +451,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
     override fun onDestroy() {
+        window.decorView.viewTreeObserver.takeIf { it.isAlive }
+            ?.removeOnGlobalLayoutListener(bottomBarContentLayoutListener)
         super.onDestroy()
         Coroutine.async {
             BookHelp.clearInvalidCache()
@@ -452,6 +491,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 }
                 upBottomMenu()
                 upBottomBarSkin()
+                updateBottomBarLayout()
                 if (it) {
                     viewPagerMain.setCurrentItem(bottomMenuCount - 1, false)
                 }
@@ -459,6 +499,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
         observeEvent<String>(EventBus.BOTTOM_BAR_SKIN) {
             upBottomBarSkin()
+        }
+        observeEvent<Int>(EventBus.BOTTOM_BAR_BLUR) {
+            updateBottomBarBlur(it)
+        }
+        observeEvent<Boolean>(EventBus.BOTTOM_BAR_LAYOUT) {
+            updateBottomBarLayout()
         }
         observeEvent<String>(PreferKey.threadCount) {
             viewModel.upPool()
@@ -595,6 +641,142 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         binding.bottomNavigationView.applySkin(map, sizePx)
     }
 
+    private fun updateBottomBarBlur(strength: Int = getPrefInt(PreferKey.bottomBarBlur, 60)) {
+        val blurView: BlurView = binding.bottomNavigationBlur
+        binding.bottomNavigationView.updateActiveIndicatorColor()
+        val baseColor = bottomBackground
+        val isLight = ColorUtils.isColorLight(baseColor)
+        val heightDp = getPrefInt(PreferKey.bottomBarHeight, 68).coerceIn(60, 80)
+        // Keep the capsule outline quiet so the live backdrop, rather than a
+        // filled slab, defines the material.
+        val borderColor = ColorUtils.withAlpha(
+            if (isLight) Color.BLACK else Color.WHITE,
+            0.10f
+        )
+        blurView.background = GradientDrawable().apply {
+            cornerRadius = (heightDp / 2f).dpToPx()
+            setColor(Color.TRANSPARENT)
+            setStroke(0.75f.dpToPx().toInt().coerceAtLeast(1), borderColor)
+        }
+        blurView.outlineProvider = ViewOutlineProvider.BACKGROUND
+        blurView.clipToOutline = true
+        blurView.elevation = 12.dpToPx().toFloat()
+        if (!bottomBarBlurConfigured) {
+            blurView.setupWith(binding.mainBlurTarget)
+                .setFrameClearDrawable(window.decorView.background)
+            bottomBarBlurConfigured = true
+        }
+        val blurStrength = strength.coerceIn(0, 100)
+        val blurRadius = blurStrength / 3.3f
+        blurView.setBlurRadius(blurRadius.coerceAtLeast(0.1f))
+        blurView.setBlurEnabled(blurStrength > 0 && !AppConfig.isEInkMode)
+        blurView.setOverlayColor(
+            ColorUtils.withAlpha(
+                baseColor,
+                if (AppConfig.isEInkMode) 1f else blurStrength / 100f * 0.18f
+            )
+        )
+    }
+
+    private fun updateBottomBarLayout() {
+        val widthPercent = getPrefInt(PreferKey.bottomBarWidth, 92).coerceIn(70, 100)
+        val heightDp = getPrefInt(PreferKey.bottomBarHeight, 68).coerceIn(60, 80)
+        val bottomOffsetDp = getPrefInt(PreferKey.bottomBarBottomOffset, 20).coerceIn(0, 48)
+        val container = binding.bottomNavigationContainer
+        val blurView = binding.bottomNavigationBlur
+        val availableWidth = container.width.takeIf { it > 0 }
+            ?: resources.displayMetrics.widthPixels
+        val params = blurView.layoutParams as FrameLayout.LayoutParams
+        params.width = (availableWidth * widthPercent / 100f).toInt()
+        params.height = heightDp.dpToPx()
+        params.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        params.setMargins(0, 0, 0, 0)
+        blurView.layoutParams = params
+
+        val navBar = binding.bottomNavigationView
+        navBar.isItemHorizontalTranslationEnabled = false
+        val navParams = navBar.layoutParams
+        navParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+        navParams.height = heightDp.dpToPx()
+        navBar.layoutParams = navParams
+        navBar.minimumHeight = navParams.height
+        navBar.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_UNLABELED
+        navBar.itemPaddingTop = 0
+        navBar.itemPaddingBottom = 0
+        navBar.refreshPressFeedback()
+        if (BottomBarSkinManager.active.isEmpty()) {
+            navBar.itemIconSize = (heightDp * 0.36f).toInt().coerceIn(22, 26).dpToPx()
+        }
+        val bottomOffsetPx = bottomOffsetDp.dpToPx()
+        container.bottomPadding = bottomNavigationInsetPx + bottomOffsetPx
+
+        // Let page content draw behind the glass. Add the same bottom clearance to
+        // each vertical scroller so its final row can still scroll above the capsule.
+        val pager = binding.viewPagerMain
+        if (pager.paddingBottom != 0) {
+            pager.setPadding(
+                pager.paddingLeft,
+                pager.paddingTop,
+                pager.paddingRight,
+                0
+            )
+        }
+        bottomBarContentInsetPx = heightDp.dpToPx() + bottomOffsetPx + bottomNavigationInsetPx
+        val decorTree = window.decorView.viewTreeObserver
+        if (decorTree.isAlive && !bottomBarContentLayoutListenerRegistered) {
+            decorTree.addOnGlobalLayoutListener(bottomBarContentLayoutListener)
+            bottomBarContentLayoutListenerRegistered = true
+        }
+        applyBottomBarContentInsets(pager)
+    }
+
+    private var bottomBarContentLayoutListenerRegistered = false
+
+    private fun applyBottomBarContentInsets(view: View) {
+        val isVerticalScroller = when (view) {
+            is RecyclerView -> view.layoutManager?.canScrollVertically() == true
+            is AbsListView, is ScrollView, is NestedScrollView -> true
+            else -> false
+        }
+        if (isVerticalScroller) {
+            val basePadding = scrollableBottomPadding[view] ?: view.paddingBottom.also {
+                scrollableBottomPadding[view] = it
+            }
+            val desiredPadding = basePadding + bottomBarContentInsetPx
+            if (view.paddingBottom != desiredPadding) {
+                view.setPadding(
+                    view.paddingLeft,
+                    view.paddingTop,
+                    view.paddingRight,
+                    desiredPadding
+                )
+            }
+            if (view is ViewGroup) view.clipToPadding = false
+        }
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                applyBottomBarContentInsets(view.getChildAt(index))
+            }
+        }
+    }
+
+    private fun migrateBottomBarGlassDefaults() {
+        val migrationKey = "bottomBarCoolapkMotionStyleMigrated"
+        if (getPrefBoolean(migrationKey)) return
+
+        // Only migrate untouched defaults from the earlier oversized opaque design.
+        if (getPrefInt(PreferKey.bottomBarWidth, 80) == 80) {
+            putPrefInt(PreferKey.bottomBarWidth, 92)
+        }
+        if (getPrefInt(PreferKey.bottomBarHeight, 56) == 56) {
+            putPrefInt(PreferKey.bottomBarHeight, 68)
+        }
+        if (getPrefInt(PreferKey.bottomBarBottomOffset, 24) == 24) {
+            putPrefInt(PreferKey.bottomBarBottomOffset, 20)
+        }
+        putPrefBoolean(migrationKey, true)
+    }
+
     private fun upHomePage() {
         when (AppConfig.defaultHomePage) {
             "bookshelf" -> {}
@@ -620,9 +802,14 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     private inner class PageChangeCallback : ViewPager.SimpleOnPageChangeListener() {
 
+        override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+            binding.bottomNavigationView.setPageScrollProgress(position, positionOffset)
+        }
+
         override fun onPageSelected(position: Int) {
             pagePosition = position
             binding.bottomNavigationView.menu[realPositions[position]].isChecked = true
+            binding.bottomNavigationView.setPageScrollProgress(position, 0f)
         }
 
     }

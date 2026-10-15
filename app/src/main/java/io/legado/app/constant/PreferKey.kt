@@ -293,4 +293,8 @@ object PreferKey {
     const val editAutoComplete = "editAutoComplete"
     const val showBoardLine = "showBoardLine"
     const val bottomBarSkin = "bottomBarSkin"
+    const val bottomBarBlur = "bottomBarBlur"
+    const val bottomBarWidth = "bottomBarWidth"
+    const val bottomBarHeight = "bottomBarHeight"
+    const val bottomBarBottomOffset = "bottomBarBottomOffset"
 }

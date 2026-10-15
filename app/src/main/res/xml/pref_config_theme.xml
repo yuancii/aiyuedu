@@ -67,6 +67,48 @@
         app:allowDividerBelow="false"
         app:iconSpaceReserved="false" />
 
+    <io.legado.app.lib.prefs.SeekBarPreference
+        android:defaultValue="60"
+        android:key="bottomBarBlur"
+        android:summary="@string/bottom_bar_blur_summary"
+        android:title="@string/bottom_bar_blur"
+        app:MaxValue="100"
+        app:MinValue="0"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:title="@string/bottom_bar_customization"
+        app:allowDividerAbove="true"
+        app:iconSpaceReserved="false">
+
+        <io.legado.app.lib.prefs.SeekBarPreference
+            android:defaultValue="92"
+            android:key="bottomBarWidth"
+            android:summary="@string/bottom_bar_width_summary"
+            android:title="@string/bottom_bar_width"
+            app:MaxValue="100"
+            app:MinValue="70"
+            app:iconSpaceReserved="false" />
+
+        <io.legado.app.lib.prefs.SeekBarPreference
+            android:defaultValue="68"
+            android:key="bottomBarHeight"
+            android:summary="@string/bottom_bar_height_summary"
+            android:title="@string/bottom_bar_height"
+            app:MaxValue="80"
+            app:MinValue="60"
+            app:iconSpaceReserved="false" />
+
+        <io.legado.app.lib.prefs.SeekBarPreference
+            android:defaultValue="20"
+            android:key="bottomBarBottomOffset"
+            android:summary="@string/bottom_bar_bottom_offset_summary"
+            android:title="@string/bottom_bar_bottom_offset"
+            app:MaxValue="48"
+            app:MinValue="0"
+            app:iconSpaceReserved="false" />
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
     <io.legado.app.lib.prefs.SwitchPreference
         android:defaultValue="false"
         android:key="disablePredictiveBack"

@@ -1737,6 +1737,15 @@
     <string name="review_resize_handle">Resize paragraph reviews</string>
     <string name="bottom_bar_skin">Bottom Bar Skin</string>
     <string name="bottom_bar_skin_summary">Customize bottom bar icons from a zip</string>
+    <string name="bottom_bar_blur">Bottom bar frosted blur</string>
+    <string name="bottom_bar_blur_summary">Drag to set 0–100; 0 disables blur</string>
+    <string name="bottom_bar_customization">Bottom bar layout</string>
+    <string name="bottom_bar_width">Width</string>
+    <string name="bottom_bar_width_summary">70–100% of screen width</string>
+    <string name="bottom_bar_height">Height</string>
+    <string name="bottom_bar_height_summary">56–80 dp</string>
+    <string name="bottom_bar_bottom_offset">Distance from bottom</string>
+    <string name="bottom_bar_bottom_offset_summary">Lift the bar 0–48 dp above the navigation area</string>
     <string name="bottom_bar_skin_assign">Assign Icons</string>
     <string name="bottom_bar_skin_name">Skin name</string>
     <string name="bottom_bar_skin_slot_selected">Selected</string>

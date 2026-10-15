@@ -1620,6 +1620,15 @@
     <string name="review_resize_handle">调整段评窗口高度</string>
     <string name="bottom_bar_skin">底栏图集</string>
     <string name="bottom_bar_skin_summary">导入 zip 自定义底栏图标</string>
+    <string name="bottom_bar_blur">底栏磨砂强度</string>
+    <string name="bottom_bar_blur_summary">拖动设置 0–100，0 表示关闭模糊</string>
+    <string name="bottom_bar_customization">底部栏布局</string>
+    <string name="bottom_bar_width">底部栏宽度</string>
+    <string name="bottom_bar_width_summary">屏幕宽度的 70–100%</string>
+    <string name="bottom_bar_height">底部栏高度</string>
+    <string name="bottom_bar_height_summary">56–80 dp</string>
+    <string name="bottom_bar_bottom_offset">底部留白</string>
+    <string name="bottom_bar_bottom_offset_summary">在系统导航区域上方抬高 0–48 dp</string>
     <string name="bottom_bar_skin_assign">分配图集</string>
     <string name="bottom_bar_skin_name">图集名</string>
     <string name="bottom_bar_skin_slot_selected">选中</string>

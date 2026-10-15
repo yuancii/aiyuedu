@@ -17,16 +17,19 @@ class SeekBarPreference(context: Context, attrs: AttributeSet) : Preference(cont
 
     private var mSeekBar: SeekBar? = null
     private var mValueText: TextView? = null
+    private var currentValue: Int = 0
 
     private var seekPlus: ImageView? = null
     private var seekReduce: ImageView? = null
 
-    var value: Int = 0
+    var value: Int
+        get() = currentValue
         set(value) {
-            field = value.coerceIn(mMinValue, mMaxValue)
-            persistInt(field)
-            mSeekBar?.progress = field
-            mValueText?.text = field.toString()
+            currentValue = value.coerceIn(mMinValue, mMaxValue)
+            persistInt(currentValue)
+            val progress = currentValue - mMinValue
+            mSeekBar?.let { if (it.progress != progress) it.progress = progress }
+            mValueText?.text = currentValue.toString()
         }
 
     init {
@@ -54,14 +57,17 @@ class SeekBarPreference(context: Context, attrs: AttributeSet) : Preference(cont
                     val newValue = progress + mMinValue
                     mValueText?.text = newValue.toString()
                     if (fromUser) {
-                        value = newValue
+                        // Persist immediately so live preview updates while dragging,
+                        // without assigning SeekBar.progress during its touch gesture.
+                        currentValue = newValue.coerceIn(mMinValue, mMaxValue)
+                        persistInt(currentValue)
                     }
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar) {}
 
                 override fun onStopTrackingTouch(seekBar: SeekBar) {
-                    val newValue = seekBar.progress + mMinValue
+                    val newValue = (seekBar.progress + mMinValue).coerceIn(mMinValue, mMaxValue)
                     if (callChangeListener(newValue)) {
                         value = newValue
                     }
