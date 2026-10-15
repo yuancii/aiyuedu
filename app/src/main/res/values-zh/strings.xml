@@ -363,6 +363,7 @@
     <string name="pull_bookmark_distance_dialog_title">下拉书签阈值（0 = 默认值）</string>
     <string name="pull_bookmark_distance_summary">下拉多远距离才会切换书签（默认值 %s px）</string>
     <string name="highlight">高亮</string>
+    <string name="clear_highlight_style">清除高亮格式</string>
     <string name="highlight_tab">标注</string>
     <string name="highlight_bg_color">背景色</string>
     <string name="highlight_text_color">字体色</string>

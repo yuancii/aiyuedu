@@ -1298,10 +1298,12 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun onHighlightStyleChanged(style: HighlightStyle) {
         editingHighlight?.let { highlight ->
-            val visibleStyle = visibleHighlightStyle(style)
-            highlight.applyStyle(visibleStyle)
+            // Editing an existing highlight must preserve an empty style. Applying the
+            // default preset here makes it impossible to turn off the final style channel.
+            val normalizedStyle = style.normalized()
+            highlight.applyStyle(normalizedStyle)
             ReadBook.updateHighlight(highlight)
-            ReadBook.saveLastHighlightStyle(visibleStyle)
+            ReadBook.saveLastHighlightStyle(normalizedStyle)
         }
     }
 
@@ -1326,6 +1328,40 @@ class ReadBookActivity : BaseReadBookActivity(),
      * 当前选择的文本
      */
     override val selectedText: String get() = binding.readView.getSelectText()
+
+    override val hasHighlightFormatInSelection: Boolean
+        get() = selectedHighlightsWithFormat().isNotEmpty()
+
+    private fun selectedHighlightRange(): BookHighlight? {
+        if (selectedText.isEmpty()) return null
+        return binding.readView.curPage.createHighlight(HighlightStyle())
+    }
+
+    private fun clearSelectedHighlightFormat() {
+        val selection = selectedHighlightRange() ?: return
+        val titleLength = selection.layoutTitleLength.takeIf { it >= 0 } ?: return
+        val chapter = binding.readView.curPage.textPage.getTextChapter()
+        ReadBook.clearHighlightStyleInRange(
+            chapter,
+            titleLength,
+            selection.bodyStart(titleLength),
+            selection.bodyEnd(titleLength)
+        )
+    }
+
+    private fun selectedHighlightsWithFormat(): List<BookHighlight> {
+        val selection = selectedHighlightRange() ?: return emptyList()
+        val chapter = binding.readView.curPage.textPage.getTextChapter()
+        val titleLength = selection.layoutTitleLength.takeIf { it >= 0 } ?: return emptyList()
+        val selectionStart = selection.bodyStart(titleLength)
+        val selectionEnd = selection.bodyEnd(titleLength)
+        return ReadBook.anchoredHighlightsOfChapter(chapter, titleLength)
+            .filter { (highlight, anchor) ->
+                anchor.start < selectionEnd && anchor.end > selectionStart &&
+                    !highlight.styleObj().isEmpty
+            }
+            .map { it.first }
+    }
 
     /**
      * 文本选择菜单操作
@@ -1371,6 +1407,11 @@ class ReadBookActivity : BaseReadBookActivity(),
                         showHighlightActionMenu(highlight, anchorX, anchorY)
                     }
                 }
+                return true
+            }
+
+            R.id.menu_clear_highlight_style -> {
+                clearSelectedHighlightFormat()
                 return true
             }
 

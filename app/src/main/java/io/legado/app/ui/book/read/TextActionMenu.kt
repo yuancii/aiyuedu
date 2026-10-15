@@ -101,24 +101,45 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
     }
 
     private fun buildPartition() {
-        val itemsById = menuItems
+        val availableItems = menuItems.filter {
+            it.itemId != R.id.menu_clear_highlight_style || callBack.hasHighlightFormatInSelection
+        }
+        val itemsById = availableItems
             .filter { it.itemId != Menu.NONE }
             .associateBy { it.itemId }
         val builtInItems = TextSelectMenuItem.entries.mapNotNull { item ->
             item.menuId?.let { id -> itemsById[id]?.let { item.key to it } }
         }.toMap()
-        val processTextItems = menuItems.filter {
+        val processTextItems = availableItems.filter {
             it.itemId == Menu.NONE && it.intent?.action == Intent.ACTION_PROCESS_TEXT
         }
         val partition = loadTextSelectMenuConfig(context).partitionItems(
             builtInItems = builtInItems,
             processTextItems = processTextItems,
-            allItems = menuItems
+            allItems = availableItems
         )
         visibleMenuItems.clear()
         visibleMenuItems.addAll(partition.bar)
         moreMenuItems.clear()
         moreMenuItems.addAll(partition.more)
+
+        // Keep the conditional action next to Highlight even when the user has
+        // customized which actions appear on the primary bar or in More.
+        val clearItem = availableItems.firstOrNull { it.itemId == R.id.menu_clear_highlight_style }
+        if (clearItem != null) {
+            moreMenuItems.remove(clearItem)
+            val primaryHighlightIndex = visibleMenuItems.indexOfFirst {
+                it.itemId == R.id.menu_highlight
+            }
+            val moreHighlightIndex = moreMenuItems.indexOfFirst {
+                it.itemId == R.id.menu_highlight
+            }
+            when {
+                primaryHighlightIndex >= 0 -> visibleMenuItems.add(primaryHighlightIndex + 1, clearItem)
+                moreHighlightIndex >= 0 -> moreMenuItems.add(moreHighlightIndex + 1, clearItem)
+                else -> moreMenuItems.add(0, clearItem)
+            }
+        }
     }
 
     fun show(
@@ -272,6 +293,8 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
 
     interface CallBack {
         val selectedText: String
+
+        val hasHighlightFormatInSelection: Boolean
 
         fun onMenuItemSelected(itemId: Int): Boolean
 

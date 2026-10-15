@@ -366,6 +366,7 @@
     <string name="pull_bookmark_distance_dialog_title">Pull bookmark threshold (0 = default)</string>
     <string name="pull_bookmark_distance_summary">How far to pull down before toggling a bookmark (default %s px)</string>
     <string name="highlight">Highlight</string>
+    <string name="clear_highlight_style">Clear highlight format</string>
     <string name="highlight_tab">Highlights</string>
     <string name="highlight_bg_color">Background color</string>
     <string name="highlight_text_color">Text color</string>

@@ -625,6 +625,74 @@ object ReadBook : CoroutineScope by MainScope() {
         callBack?.upContent(resetPageOffset = false)
     }
 
+    /** Clears only the selected body-text interval, keeping styled pieces around it. */
+    fun clearHighlightStyleInRange(
+        chapter: TextChapter,
+        layoutTitleLength: Int,
+        selectionStart: Int,
+        selectionEnd: Int
+    ) {
+        if (selectionEnd <= selectionStart || layoutTitleLength < 0) return
+        val titleLength = layoutTitleLength
+        val bodyText = chapterText(chapter).drop(titleLength)
+        val ranges = anchoredHighlightsOfChapter(chapter, titleLength)
+        val affected = ranges.filter { (highlight, anchor) ->
+            anchor.start < selectionEnd && anchor.end > selectionStart &&
+                !highlight.styleObj().isEmpty
+        }
+        if (affected.isEmpty()) return
+
+        var nextTime = max(
+            System.currentTimeMillis(),
+            (highlights.maxOfOrNull { it.time } ?: 0L) + 1L
+        )
+        fun nextHighlightTime(): Long = nextTime++
+
+        val replacements = affected.flatMap { (highlight, anchor) ->
+            val start = anchor.start.coerceIn(0, bodyText.length)
+            val end = anchor.end.coerceIn(start, bodyText.length)
+            val clearStart = max(start, selectionStart.coerceIn(0, bodyText.length))
+            val clearEnd = min(end, selectionEnd.coerceIn(0, bodyText.length))
+            if (clearEnd <= clearStart) return@flatMap listOf(highlight)
+
+            fun fragment(
+                fragmentStart: Int,
+                fragmentEnd: Int,
+                time: Long,
+                style: HighlightStyle,
+                note: String = ""
+            ): BookHighlight? {
+                if (fragmentEnd <= fragmentStart) return null
+                return highlight.copy(
+                    time = time,
+                    chapterPos = fragmentStart + titleLength,
+                    chapterPosEnd = fragmentEnd + titleLength,
+                    layoutTitleLength = titleLength,
+                    bookText = bodyText.substring(fragmentStart, fragmentEnd),
+                    note = note
+                ).apply { applyStyle(style) }
+            }
+
+            buildList {
+                fragment(start, clearStart, nextHighlightTime(), highlight.styleObj())?.let { add(it) }
+                // Keep the original record identity and its note on the cleared segment.
+                fragment(clearStart, clearEnd, highlight.time, HighlightStyle(), highlight.note)?.let { add(it) }
+                fragment(clearEnd, end, nextHighlightTime(), highlight.styleObj())?.let { add(it) }
+            }
+        }
+        val originalHighlights = affected.map { it.first }.distinctBy { it.time }
+        appDb.runInTransaction {
+            appDb.bookHighlightDao.delete(*originalHighlights.toTypedArray())
+            appDb.bookHighlightDao.insert(*replacements.toTypedArray())
+        }
+        val replacedTimes = originalHighlights.mapTo(hashSetOf()) { it.time }
+        highlights = (highlights.filterNot { it.time in replacedTimes } + replacements)
+            .sortedWith(compareBy(BookHighlight::chapterIndex, BookHighlight::chapterPos, BookHighlight::time))
+        highlightsVersion++
+        invalidateHighlightSpacing()
+        callBack?.upContent(resetPageOffset = false)
+    }
+
     fun removeHighlight(highlight: BookHighlight) {
         appDb.bookHighlightDao.delete(highlight)
         if (!highlight.isForBook(book)) return
