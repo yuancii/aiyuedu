@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 竖排版滑块设置项：文字(标题/摘要)在上，调节滑杆在下，两者分开成两行。
+     与 view_preference_seekbar.xml 的区别仅在于排列方式，
+     控件 id 完全一致，因此可直接被 SeekBarPreference 绑定。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="false"
+    android:focusable="false"
+    android:minHeight="60dp"
+    android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingTop="10dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="10dp">
+
+    <TextView
+        android:id="@+id/preference_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:text="@string/title"
+        android:textColor="@color/primaryText"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/preference_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/default1"
+        android:textColor="@color/tv_text_summary"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_seek_reduce"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/reduce"
+            android:src="@drawable/ic_reduce"
+            android:tint="@color/primaryText" />
+
+        <io.legado.app.lib.theme.view.ThemeSeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="0dp"
+            android:layout_height="25dp"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:max="100" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_seek_plus"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/plus"
+            android:src="@drawable/ic_add"
+            android:tint="@color/primaryText" />
+
+        <TextView
+            android:id="@+id/tv_seek_value"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:singleLine="true"
+            android:text="0"
+            android:textColor="@color/primaryText"
+            tools:ignore="HardcodedText,RtlHardcoded" />
+
+    </LinearLayout>
+
+</LinearLayout>

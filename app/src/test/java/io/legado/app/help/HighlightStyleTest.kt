@@ -1,0 +1,210 @@
+package io.legado.app.help
+
+import com.google.gson.Gson
+import io.legado.app.help.HighlightStyle.Deco
+import io.legado.app.help.HighlightStyle.FillShape
+import io.legado.app.help.HighlightStyle.Kind
+import io.legado.app.help.HighlightStyle.Shadow
+import io.legado.app.help.HighlightStyle.Underline
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class HighlightStyleTest {
+
+    @Test
+    fun `horizontal padding is independent optional and zero overrides the base`() {
+        val legacy = HighlightStyle(fill = 1, fillShape = FillShape.PILL, pillPaddingScale = 1.5f)
+        val padded = legacy.copy(horizontalPadding = 12f)
+        assertTrue(padded.needsPerColumnDraw)
+        assertFalse(HighlightStyle(horizontalPadding = 0f).isEmpty)
+        assertEquals(1.5f, padded.resolvedPillPaddingScale, 0f)
+        assertEquals(12f, padded.copy(pillPaddingScale = 0.5f).resolvedHorizontalPadding)
+        assertEquals(padded.copy(horizontalPadding = 0f),
+            HighlightStyle.merge(padded, HighlightStyle(horizontalPadding = 0f)))
+        assertEquals(padded, HighlightStyle.merge(padded, HighlightStyle()))
+        assertEquals(legacy, padded.copy(horizontalPadding = null))
+        assertEquals(HighlightStyle(), HighlightStyle(horizontalPadding = Float.NaN).normalized())
+        assertEquals(HighlightStyle(), HighlightStyle(horizontalPadding = Float.POSITIVE_INFINITY).normalized())
+        assertEquals(0f, HighlightStyle(horizontalPadding = -1f).normalized().horizontalPadding)
+        assertEquals(64f, HighlightStyle(horizontalPadding = 100f).normalized().horizontalPadding)
+    }
+
+    @Test
+    fun `font metrics are optional normalized channels and zero spacing overrides the base`() {
+        val legacy = HighlightStyle(fontPath = "font.ttf")
+        assertFalse(legacy.changesTextMetrics)
+        val metrics = legacy.copy(fontSize = 42f, letterSpacing = -0.2f)
+        assertTrue(metrics.changesTextMetrics)
+        assertTrue(metrics.needsPerColumnDraw)
+        assertFalse(HighlightStyle(fontSize = 42f).isEmpty)
+        assertEquals(metrics.copy(letterSpacing = 0f),
+            HighlightStyle.merge(metrics, HighlightStyle(letterSpacing = 0f)))
+        assertEquals(HighlightStyle(), HighlightStyle(fontSize = Float.NaN, letterSpacing = Float.POSITIVE_INFINITY).normalized())
+        assertEquals(HighlightStyle(fontSize = 100f, letterSpacing = -0.5f),
+            HighlightStyle(fontSize = 200f, letterSpacing = -2f).normalized())
+        assertEquals(legacy, metrics.copy(fontSize = null, letterSpacing = null))
+    }
+
+    @Test
+    fun `empty style needs no per-column drawing`() {
+        val style = HighlightStyle()
+        assertTrue(style.isEmpty)
+        assertFalse(style.needsPerColumnDraw)
+    }
+
+    @Test
+    fun `fill-only style keeps the fast drawing path`() {
+        val style = HighlightStyle(fill = 0x80FFFF00.toInt())
+        assertFalse(style.isEmpty)
+        assertFalse(style.needsPerColumnDraw)
+        assertEquals(FillShape.RECTANGLE, style.resolvedFillShape)
+    }
+
+    @Test
+    fun `text decorations need per-column drawing`() {
+        assertTrue(HighlightStyle(textColor = 1).needsPerColumnDraw)
+        assertTrue(HighlightStyle(bold = true).needsPerColumnDraw)
+        assertTrue(HighlightStyle(italic = true).needsPerColumnDraw)
+        assertTrue(HighlightStyle(underline = Underline(Kind.WAVY)).needsPerColumnDraw)
+        assertTrue(HighlightStyle(strike = Deco()).needsPerColumnDraw)
+        assertTrue(HighlightStyle(box = Deco()).needsPerColumnDraw)
+        assertTrue(HighlightStyle(emphasis = Deco()).needsPerColumnDraw)
+        assertTrue(HighlightStyle(shadow = Shadow()).needsPerColumnDraw)
+        assertTrue(HighlightStyle(fontPath = "font.ttf").needsPerColumnDraw)
+    }
+
+    @Test
+    fun `merge is last-wins per configured channel`() {
+        val base = HighlightStyle(
+            fill = 1,
+            textColor = 2,
+            underline = Underline(Kind.SOLID)
+        )
+        val merged = HighlightStyle.merge(
+            base,
+            HighlightStyle(fill = 3, bold = true, strike = Deco(4), fontPath = "font.ttf")
+        )
+        assertEquals(3, merged.fill)
+        assertEquals(2, merged.textColor)
+        assertTrue(merged.bold)
+        assertEquals(Underline(Kind.SOLID), merged.underline)
+        assertEquals(Deco(4), merged.strike)
+        assertEquals("font.ttf", merged.fontPath)
+    }
+
+    @Test
+    fun `shadow merge is last-wins and null keeps the base`() {
+        val base = HighlightStyle(shadow = Shadow(radius = 5f, color = 1))
+        val replacement = Shadow(radius = 2f, dx = 0f, dy = 0f, color = 2)
+
+        assertEquals(replacement, HighlightStyle.merge(base, HighlightStyle(shadow = replacement)).shadow)
+        assertEquals(base, HighlightStyle.merge(base, HighlightStyle()))
+    }
+
+    @Test
+    fun `shadow values are normalized before drawing`() {
+        assertEquals(
+            Shadow(radius = 0f, dx = 0f, dy = 0f, color = 7),
+            Shadow(-1f, Float.POSITIVE_INFINITY, Float.NaN, 7).normalized()
+        )
+        assertEquals(
+            Shadow(radius = 10f, dx = -10f, dy = 10f),
+            Shadow(radius = 99f, dx = -99f, dy = 99f).normalized()
+        )
+    }
+
+    @Test
+    fun `underline values are normalized before drawing`() {
+        val normalized = Underline(
+            kind = Kind.DASHED,
+            width = Float.POSITIVE_INFINITY,
+            distance = -4f,
+        ).normalized()
+
+        assertEquals(Underline.DEFAULT_WIDTH, normalized.width, 0f)
+        assertEquals(Underline.MIN_DISTANCE, normalized.distance, 0f)
+        assertEquals(Kind.DASHED, normalized.kind)
+        assertEquals(
+            Underline.MAX_WIDTH,
+            Underline(width = Underline.MAX_WIDTH + 1f).normalized().width,
+            0f,
+        )
+        assertEquals(Underline(), Underline(width = 1f, distance = 0f).normalized())
+    }
+
+    @Test
+    fun `normalization reuses valid style instances`() {
+        val shadow = Shadow(radius = 4f, dx = -2f, dy = 6f)
+        val style = HighlightStyle(shadow = shadow)
+
+        assertSame(shadow, shadow.normalized())
+        assertSame(style, style.normalized())
+    }
+
+    @Test
+    fun `empty style does not overwrite configured channels`() {
+        val base = HighlightStyle(fill = 9, textColor = 8)
+        assertEquals(base, HighlightStyle.merge(base, HighlightStyle()))
+    }
+
+    @Test
+    fun `style survives Gson round trip`() {
+        val gson = Gson()
+        val style = HighlightStyle(
+            fill = 0x80FFFF00.toInt(),
+            textColor = 0xFFFF0000.toInt(),
+            bold = true,
+            fontPath = "content://fonts/reader.ttf",
+            fontSize = 36f,
+            letterSpacing = -0.15f,
+            underline = Underline(Kind.DASHED, 0xFF00FF00.toInt()),
+            strike = Deco(0xFF0000FF.toInt())
+        )
+        assertEquals(style, gson.fromJson(gson.toJson(style), HighlightStyle::class.java))
+    }
+
+    @Test
+    fun `fill shape follows the winning fill channel`() {
+        val base = HighlightStyle(fill = 1, fillShape = FillShape.MARKER)
+        val shaped = HighlightStyle.merge(
+            base,
+            HighlightStyle(fill = 2, fillShape = FillShape.PILL)
+        )
+        val legacy = HighlightStyle.merge(base, HighlightStyle(fill = 3))
+
+        assertEquals(FillShape.PILL, shaped.resolvedFillShape)
+        assertEquals(FillShape.RECTANGLE, legacy.resolvedFillShape)
+    }
+
+    @Test
+    fun `text overlays preserve a padded background but geometry changes split it`() {
+        val base = HighlightStyle(fill = 1, fillShape = FillShape.PILL, horizontalPadding = 12f)
+        val merged = HighlightStyle.merge(base, HighlightStyle(textColor = 2, bold = true,
+            italic = true, underline = Underline(Kind.WAVY), fontPath = "font.ttf"))
+
+        assertTrue(base.hasSameFillGeometry(merged))
+        assertEquals(2, merged.textColor)
+        assertTrue(merged.bold && merged.italic)
+        assertEquals(Underline(Kind.WAVY), merged.underline)
+        assertFalse(base.hasSameFillGeometry(base.copy(fill = 2)))
+        assertFalse(base.hasSameFillGeometry(base.copy(fillShape = FillShape.RECTANGLE)))
+        assertFalse(base.hasSameFillGeometry(base.copy(horizontalPadding = 24f)))
+        assertFalse(base.hasSameFillGeometry(base.copy(horizontalPadding = null)))
+        assertFalse(base.hasSameFillGeometry(base.copy(pillPaddingScale = 0.5f)))
+        assertTrue(base.hasSameFillGeometry(base.copy(pillPaddingScale = 1f)))
+        val rectangle = base.copy(fillShape = null)
+        assertTrue(rectangle.hasSameFillGeometry(rectangle.copy(fillShape = FillShape.RECTANGLE,
+            pillPaddingScale = 0.5f)))
+    }
+
+    @Test
+    fun `shape alone does not enable highlighting`() {
+        val style = HighlightStyle(fillShape = FillShape.HALF)
+
+        assertTrue(style.isEmpty)
+        assertFalse(style.needsPerColumnDraw)
+    }
+}

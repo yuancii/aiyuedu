@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/view_pager_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <!-- 悬浮底栏容器：液态玻璃层在下面，ThemeBottomNavigationVIew 在其上层
+         （底栏保持透明，只负责图标与交互，玻璃由 ComposeView 绘制） -->
+    <FrameLayout
+        android:id="@+id/bottom_bar_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:minHeight="50dp">
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/bottom_bar_glass"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <io.legado.app.lib.theme.view.ThemeBottomNavigationVIew
+            android:id="@+id/bottom_navigation_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:minHeight="50dp"
+            app:itemActiveIndicatorStyle="@color/transparent"
+            app:labelVisibilityMode="unlabeled"
+            app:menu="@menu/main_bnv" />
+
+    </FrameLayout>
+
+</FrameLayout>

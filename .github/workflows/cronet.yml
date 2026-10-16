@@ -1,0 +1,57 @@
+name: Update Cronet
+
+on:
+  # Keep 152 pinned while newer official natives require API 24 (the app supports 23).
+  # Deliberate upgrades remain available through workflow_dispatch and runtime review.
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'LegadoTeam/legado' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check Cronet Updates
+        run: |
+          chmod +x .github/scripts/cronet.sh
+          .github/scripts/cronet.sh Stable 100
+
+      - name: Set up JDK 21
+        if: ${{ env.cronet == 'ok' }}
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6.4.0
+        if: ${{ env.cronet == 'ok' }}
+
+      - name: Download and verify Cronet bundle
+        if: ${{ env.cronet == 'ok' }}
+        run: |
+          set -euo pipefail
+
+          chmod +x gradlew
+          ./gradlew app:downloadCronet
+          chmod +x .github/scripts/verify-cronet.sh
+          .github/scripts/verify-cronet.sh
+
+      - name: Create Pull Request
+        if: ${{ env.cronet == 'ok' }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.TOKEN_MGZ }}
+          title: ${{ env.PR_TITLE }}
+          commit-message: |
+            ${{ env.PR_TITLE }}
+            - ${{ env.PR_BODY }}
+          body: ${{ env.PR_BODY }}
+          branch: cronet
+          delete-branch: true
+          add-paths: |
+            app/cronetlib/*.jar
+            app/src/main/assets/cronet.json
+            app/src/main/assets/updateLog.md
+            gradle.properties
+            app/cronet-proguard-rules.pro
