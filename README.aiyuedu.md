@@ -149,7 +149,7 @@
 
 **Android Studio**：`构建 → Generate App Bundles or APKs → Generate APKs`
 
-> 注意：`app/google-services.json` 为上游项目的 Firebase 配置，若用于自己的分发请**替换为你自己的 Firebase 项目或移除 Firebase 依赖**。
+> **Firebase 配置不在仓库内**：本仓库已移除 `app/google-services.json`，并把它加入 `.gitignore`。如需统计/性能数据，请把自己 Firebase 项目的 `google-services.json` 放到 `app/` 目录（不会被提交），否则构建会报 `File google-services.json is missing`。切勿使用他人项目的凭据。
 
 ---
 
@@ -162,3 +162,5 @@
 ## 免责声明
 
 本项目为个人学习与自用目的的修改版，按 GPL-3.0 的 **「无担保」** 条款提供，作者不对使用后果承担任何责任。请勿将其用于任何违反当地法律法规的用途。
+
+📄 **完整免责声明（版权、书源、隐私、使用限制等条款）：[DISCLAIMER.md](DISCLAIMER.md)**
