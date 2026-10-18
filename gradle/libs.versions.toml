@@ -8,7 +8,7 @@ agp = "8.13.2"
 # AGP 8.13.2 + compileSdk 36 兼容。
 # 注意：backdrop 2.0.1 要求 compileSdk 37 + AGP 9.1.0，本工程不可用。
 compose = "1.10.3"
-backdrop = "1.0.6"
+backdrop = "2.0.1"
 kyantShapes = "1.2.0"
 appcompat = "1.7.1"
 colorpicker = "1.1.0"
