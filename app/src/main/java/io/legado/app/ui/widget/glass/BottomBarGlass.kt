@@ -24,9 +24,6 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * 液态玻璃底栏面板（按 kyant0 backdrop 的分层思路组装）。
@@ -36,12 +33,11 @@ import kotlin.math.min
  *  - L1 表面着色：竖向渐变（上略实、下略透），避免下沿发白
  *  - L2 边缘光：1dp 内描边（上亮下暗）+ 顶部一条镜面高光
  *  - L3 选中胶囊：外发光 → 本体渐变 → 顶部内高光 → 上亮下暗亮边
- *  - L4 动效：弹簧滑动 / 拖动跟手 / 按压与拖动时放大提亮 / **拖动时液态拉伸**
+ *  - L4 动效：弹簧滑动 / 拖动跟手 / 按压与拖动时放大提亮
  *
- * **液态拉伸（L4）**：拖动时胶囊不再"瞬移"，而是从"原选中格"到"手指位置"
- * 拉成一条两端为半圆的胶囊（stadium），像液体被指头拖过去；松手后由
- * [Animatable] 弹簧吸附到目标格。图标本身的放大由
- * [io.legado.app.ui.main.MainActivity] 通过 `ThemeBottomNavigationVIew.magnifyItems` 负责。
+ * 胶囊按下或拖动时会放大，并直接跟手滑动（不再做"从原格延伸"的拉伸效果）。
+ * 图标本身的放大由 [io.legado.app.ui.main.MainActivity] 通过
+ * `ThemeBottomNavigationVIew.magnifyItems` 负责。
  *
  * ⚠️ 这里**只能**用 fillMaxWidth()，绝不能用 fillMaxSize()：
  * ComposeView 放在 wrap_content 的父容器里，首次测量拿到的是 AT_MOST
@@ -203,17 +199,12 @@ fun BottomBarGlass(
                         val top = (height - capsuleHeight) / 2f
                         val corner = CornerRadius(capsuleHeight / 2f, capsuleHeight / 2f)
 
-                        // ── 液态拉伸：拖动时从"原选中格"拉伸到"手指位置" ──
-                        val currentCenterX = (capsulePosition + 0.5f) * itemWidth
-                        val anchorCenterX = (selectedIndex + 0.5f) * itemWidth
-                        val fingerCenterX = dragFraction * width
-                        val liquid = dragging &&
-                            abs(fingerCenterX - anchorCenterX) > itemWidth * 0.08f
-                        val spanLeft = if (liquid) min(anchorCenterX, fingerCenterX) else currentCenterX
-                        val spanRight = if (liquid) max(anchorCenterX, fingerCenterX) else currentCenterX
-                        val left = (spanLeft - capsuleWidth / 2f).coerceAtLeast(0f)
-                        val right = (spanRight + capsuleWidth / 2f).coerceAtMost(width)
-                        val drawWidth = (right - left).coerceAtLeast(capsuleWidth)
+                        // 胶囊跟手：拖动时 capsulePosition 已 snap 到手指位置，
+                        // 尺寸由 pressScale 放大（按下 1.45× / 拖动 1.18×）
+                        val centerX = (capsulePosition + 0.5f) * itemWidth
+                        val left = (centerX - capsuleWidth / 2f)
+                            .coerceIn(0f, (width - capsuleWidth).coerceAtLeast(0f))
+                        val drawWidth = capsuleWidth
                         val capsuleCenter = Offset(left + drawWidth / 2f, height / 2f)
 
                         // 外发光：让胶囊"浮"在玻璃上
