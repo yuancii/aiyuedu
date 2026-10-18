@@ -1,10 +1,14 @@
 # aiyuedu
 
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yuancii/aiyuedu?include_prereleases&label=release)](https://github.com/yuancii/aiyuedu/releases)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://developer.android.com/)
+
 基于 [LegadoTeam/legado](https://github.com/LegadoTeam/legado) 的个人修改版调试构建。
 
 > ⚠️ **本项目与 Legado 官方无关**，不是官方版本，请勿混淆。
 >
-> 📄 完整免责声明：[DISCLAIMER.md](DISCLAIMER.md)　·　上游原始 README：[README-legado.md](README-legado.md)
+> 📄 完整免责声明：[DISCLAIMER.md](DISCLAIMER.md)　·　上游原始 README：[README-legado.md](README-legado.md)　·　更新日志：[CHANGELOG.md](CHANGELOG.md)
 
 ---
 
