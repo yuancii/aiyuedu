@@ -12,6 +12,8 @@ node_modules/
 /app/app
 /app/google
 /app/gradle.properties
+# Firebase 凭据不入库：本地自备，不提交
+/app/google-services.json
 package-lock.json
 .idea/
 # Kotlin 2.0
