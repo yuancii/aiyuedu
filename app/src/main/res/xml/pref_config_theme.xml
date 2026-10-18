@@ -166,6 +166,32 @@
         app:cpv_dialogType="preset"
         app:iconSpaceReserved="false" />
 
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="50"
+        android:key="bottomBarCapsuleSpeed"
+        android:summary="@string/bottom_bar_capsule_speed_summary"
+        android:title="@string/bottom_bar_capsule_speed"
+        app:MaxValue="100"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="11"
+        android:key="bottomBarCapsuleInset"
+        android:summary="@string/bottom_bar_capsule_inset_summary"
+        android:title="@string/bottom_bar_capsule_inset"
+        app:MaxValue="24"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
     <io.legado.app.lib.prefs.SwitchPreference
         android:defaultValue="false"
         android:key="disablePredictiveBack"

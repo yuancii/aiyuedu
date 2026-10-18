@@ -303,4 +303,8 @@ object PreferKey {
     const val bottomBarEffectColor = "bottomBarEffectColor"
     /** 底栏玻璃底色（0 = 跟随主题）。只决定色相，透明度由 bottomBarGlassAlpha 控制。 */
     const val bottomBarSurfaceColor = "bottomBarSurfaceColor"
+    /** 胶囊滑动速度 0-100，映射为 spring 刚度（默认 50 → 420，与旧手感一致） */
+    const val bottomBarCapsuleSpeed = "bottomBarCapsuleSpeed"
+    /** 胶囊与底栏上下边缘的距离(dp)，越大胶囊越矮 */
+    const val bottomBarCapsuleInset = "bottomBarCapsuleInset"
 }

@@ -1635,6 +1635,10 @@
     <string name="bottom_bar_magnify_summary">按住/拖动底栏时放大胶囊附近的图标（100% 为关闭）</string>
     <string name="bottom_bar_surface_color">底栏颜色</string>
     <string name="bottom_bar_surface_color_summary">底栏玻璃底色，透明为跟随主题；不改变透明度</string>
+    <string name="bottom_bar_capsule_speed">胶囊滑动速度</string>
+    <string name="bottom_bar_capsule_speed_summary">点击切换时胶囊滑到目标格的速度，50 为默认手感</string>
+    <string name="bottom_bar_capsule_inset">胶囊上下边距</string>
+    <string name="bottom_bar_capsule_inset_summary">胶囊与底栏上下边缘的距离，越大胶囊越矮</string>
     <string name="bottom_bar_effect_color">动效颜色</string>
     <string name="bottom_bar_effect_color_summary">选中胶囊与按压光晕的颜色</string>
     <string name="bottom_bar_skin_assign">分配图集</string>

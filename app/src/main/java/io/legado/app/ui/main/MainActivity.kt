@@ -4,6 +4,7 @@ package io.legado.app.ui.main
 
 import android.graphics.Rect
 import android.graphics.drawable.StateListDrawable
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
@@ -121,6 +122,15 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private val glassSurfaceAlpha = mutableStateOf(204)
     /** 底栏玻璃底色（0 = 跟随主题），来源 AppConfig.bottomBarSurfaceColor */
     private val bottomBarSurfaceTint = mutableStateOf(0)
+    /** 胶囊滑动速度 0~100，来源 AppConfig.bottomBarCapsuleSpeed */
+    private val bottomBarCapsuleSpeed = mutableStateOf(50)
+    /** 胶囊上下边距(dp)，来源 AppConfig.bottomBarCapsuleInset */
+    private val bottomBarCapsuleInset = mutableStateOf(11)
+    /** 底栏抖动/位移动效：按下时的左右抖动动画 */
+    private var barShakeAnimator: ValueAnimator? = null
+    /** 拖动跟随：每帧向目标靠拢的循环动画（"一直"缓慢跟随，不设结束时长） */
+    private var barFollowAnimator: ValueAnimator? = null
+    private var barFollowTargetX = 0f
     /** 悬浮底栏玻璃模糊半径(dp)，来源 AppConfig.bottomBarGlassBlur */
     private val glassBlurDp = mutableStateOf(24)
     /** 选中胶囊宽度（占单格百分比），来源 AppConfig.bottomBarIndicatorWidth */
@@ -295,12 +305,20 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         // 所以在 ThemeBottomNavigationVIew 的 dispatchTouchEvent 里回调
         bottomNavigationView.onPressChanged = { pressed ->
             bottomBarPressed.value = pressed
-            if (pressed) updateTabMagnify(-1f) else bottomNavigationView.resetItemScale()
+            if (pressed) {
+                updateTabMagnify(-1f)
+                shakeBar()
+                scaleBarUp()
+            } else {
+                bottomNavigationView.resetItemScale()
+                resetBarScale()
+            }
         }
         // 在底栏上按住横向拖动：胶囊跟手，松手切到手指所在的那一格
         bottomNavigationView.onDragFractionChanged = { fraction ->
             bottomBarDragFraction.value = fraction
-            if (fraction in 0f..1f) updateTabMagnify(fraction)
+            updateTabMagnify(fraction)
+            shiftBar(fraction)
         }
         bottomNavigationView.onDragEnd = { fraction ->
             val count = bottomBarItemCount.value
@@ -312,6 +330,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             }
             bottomBarDragFraction.value = -1f
             bottomNavigationView.resetItemScale()
+            resetBarShift()
+            resetBarScale()
         }
         if (AppConfig.isEInkMode) {
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
@@ -343,6 +363,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         glassSurfaceAlpha.value = AppConfig.bottomBarGlassAlpha.coerceIn(0, 100) * 255 / 100
         glassBlurDp.value = AppConfig.bottomBarGlassBlur.coerceIn(0, 60)
         bottomBarSurfaceTint.value = AppConfig.bottomBarSurfaceColor
+        bottomBarCapsuleSpeed.value = AppConfig.bottomBarCapsuleSpeed.coerceIn(0, 100)
+        bottomBarCapsuleInset.value = AppConfig.bottomBarCapsuleInset.coerceIn(0, 24)
         indicatorWidthPercent.value = AppConfig.bottomBarIndicatorWidth.coerceIn(40, 120)
         bottomBarEffectColor.value = AppConfig.bottomBarEffectColor
     }
@@ -379,7 +401,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 selectedIndex = bottomBarSelectedIndex.value,
                 pressed = bottomBarPressed.value,
                 indicatorWidthPercent = indicatorWidthPercent.value,
-                dragFraction = bottomBarDragFraction.value
+                dragFraction = bottomBarDragFraction.value,
+                slideStiffness = 180f + bottomBarCapsuleSpeed.value * 4.8f,
+                capsuleInset = bottomBarCapsuleInset.value.dp
             )
         }
         // 保险：Glass 的 Compose 内容首次测量若撑满可用高度，会把 wrap_content 的
@@ -390,6 +414,80 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 glass.layoutParams = glass.layoutParams.apply { height = bar.height }
             }
         }
+    }
+
+    /**
+     * 按下底栏时的左右抖动：阻尼衰减的一次横向摆动（整条底栏，含玻璃与图标）。
+     */
+    private fun shakeBar() {
+        val bar = binding.bottomBarContainer
+        barShakeAnimator?.cancel()
+        val amp = 6.dpToPx().toFloat()
+        val animator = ValueAnimator.ofFloat(
+            0f, -amp, amp * 0.7f, -amp * 0.4f, amp * 0.15f, 0f
+        ).apply {
+            duration = 300
+            addUpdateListener { bar.translationX = it.animatedValue as Float }
+        }
+        barShakeAnimator = animator
+        animator.start()
+    }
+
+    /**
+     * 拖动胶囊时，整条底栏朝胶囊所在的一侧**持续缓慢**滑一点。
+     *
+     * 位移量 = 胶囊中心相对底栏中心的偏移 × 0.20，上限 ±36dp；
+     * 时长不设上限：拖动期间由一个循环 animator 每帧向目标靠拢（约 8%/帧），
+     * 所以底栏会"一直"跟着走，松手才回位。
+     */
+    private fun shiftBar(fraction: Float) {
+        val bar = binding.bottomBarContainer
+        barShakeAnimator?.cancel()
+        if (bar.width <= 0) return
+        val amp = 36.dpToPx().toFloat()
+        barFollowTargetX = ((fraction - 0.5f) * bar.width * 0.20f).coerceIn(-amp, amp)
+        if (barFollowAnimator == null) {
+            barFollowAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 1000
+                repeatCount = ValueAnimator.INFINITE
+                addUpdateListener {
+                    bar.translationX += (barFollowTargetX - bar.translationX) * 0.08f
+                }
+                start()
+            }
+        }
+    }
+
+    /** 停止拖动跟随（松手时调用） */
+    private fun stopBarFollow() {
+        barFollowAnimator?.cancel()
+        barFollowAnimator = null
+        barFollowTargetX = 0f
+    }
+
+    /**
+     * 按下底栏时整条底栏轻微放大（胶囊停止/松手时复原）。
+     */
+    private fun scaleBarUp() {
+        binding.bottomBarContainer.animate()
+            .scaleX(1.025f).scaleY(1.025f)
+            .setDuration(140)
+            .start()
+    }
+
+    private fun resetBarScale() {
+        binding.bottomBarContainer.animate()
+            .scaleX(1f).scaleY(1f)
+            .setDuration(180)
+            .start()
+    }
+
+    /** 松手后底栏回到原位 */
+    private fun resetBarShift() {
+        val bar = binding.bottomBarContainer
+        barShakeAnimator?.cancel()
+        stopBarFollow()
+        bar.animate().translationX(0f).setDuration(180).start()
     }
 
     /**

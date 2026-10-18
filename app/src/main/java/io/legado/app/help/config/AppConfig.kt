@@ -515,6 +515,20 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.bottomBarSurfaceColor, value)
         }
 
+    /** 胶囊滑动速度 0-100，映射为 spring 刚度（50 → 420，即旧版手感） */
+    var bottomBarCapsuleSpeed: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleSpeed, 50)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleSpeed, value.coerceIn(0, 100))
+        }
+
+    /** 胶囊与底栏上下边缘的距离(dp)，越大胶囊越矮 */
+    var bottomBarCapsuleInset: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleInset, 11)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleInset, value.coerceIn(0, 24))
+        }
+
     /** 悬浮底栏动效颜色（选中胶囊 + 按压光晕） */
     var bottomBarEffectColor: Int
         get() = appCtx.getPrefInt(

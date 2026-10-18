@@ -1752,6 +1752,10 @@
     <string name="bottom_bar_magnify_summary">Enlarge icons near the capsule while pressing (100% = off)</string>
     <string name="bottom_bar_surface_color">Bar color</string>
     <string name="bottom_bar_surface_color_summary">Tint of the glass surface; transparent follows the theme (opacity unchanged)</string>
+    <string name="bottom_bar_capsule_speed">Capsule slide speed</string>
+    <string name="bottom_bar_capsule_speed_summary">Speed of the capsule sliding to the tapped item; 50 = default feel</string>
+    <string name="bottom_bar_capsule_inset">Capsule vertical margin</string>
+    <string name="bottom_bar_capsule_inset_summary">Gap between the capsule and the bar\'s top/bottom edges; larger = shorter capsule</string>
     <string name="bottom_bar_effect_color">Effect color</string>
     <string name="bottom_bar_effect_color_summary">Color of the selection capsule and press glow</string>
     <string name="bottom_bar_skin_assign">Assign Icons</string>

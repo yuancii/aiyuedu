@@ -7,6 +7,7 @@ import android.graphics.drawable.StateListDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
@@ -46,22 +47,38 @@ class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
     /** 抬起时的横向位置比例(0..1)，用于把选中项切到手指所在的那一格 */
     var onDragEnd: ((Float) -> Unit)? = null
 
+    /** 按下位置与是否已判定为"拖动"（点击时不上报拖动位置，避免胶囊瞬移到手指处） */
+    private var downX = 0f
+    private var dragStarted = false
+    private val touchSlop by lazy { ViewConfiguration.get(context).scaledTouchSlop }
+
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         val fraction = if (width > 0) (ev.x / width).coerceIn(0f, 1f) else 0f
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                downX = ev.x
+                dragStarted = false
                 onPressChanged?.invoke(true)
-                onDragFractionChanged?.invoke(fraction)
             }
 
-            MotionEvent.ACTION_MOVE -> onDragFractionChanged?.invoke(fraction)
+            MotionEvent.ACTION_MOVE -> {
+                // 超过 touchSlop 才算拖动；点击时胶囊保持原位，松手后再滑到目标格
+                if (!dragStarted && kotlin.math.abs(ev.x - downX) > touchSlop) {
+                    dragStarted = true
+                }
+                if (dragStarted) onDragFractionChanged?.invoke(fraction)
+            }
 
             MotionEvent.ACTION_UP -> {
                 onPressChanged?.invoke(false)
                 onDragEnd?.invoke(fraction)
+                dragStarted = false
             }
 
-            MotionEvent.ACTION_CANCEL -> onPressChanged?.invoke(false)
+            MotionEvent.ACTION_CANCEL -> {
+                onPressChanged?.invoke(false)
+                dragStarted = false
+            }
         }
         return super.dispatchTouchEvent(ev)
     }

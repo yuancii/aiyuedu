@@ -65,6 +65,10 @@ fun BottomBarGlass(
     indicatorWidthPercent: Int,
     dragFraction: Float,
     cornerRadius: Dp = 28.dp,
+    /** 胶囊滑动刚度（spring stiffness），由「胶囊滑动速度」设置控制；420 = 原手感 */
+    slideStiffness: Float = 420f,
+    /** 胶囊与底栏上下边缘的距离；越大胶囊越矮 */
+    capsuleInset: Dp = 11.dp,
 ) {
     val glassShape = RoundedCornerShape(cornerRadius)
 
@@ -78,7 +82,7 @@ fun BottomBarGlass(
         } else {
             capsuleIndex.animateTo(
                 targetValue = selectedIndex.toFloat(),
-                animationSpec = spring(dampingRatio = 0.62f, stiffness = 420f)
+                animationSpec = spring(dampingRatio = 0.62f, stiffness = slideStiffness)
             )
         }
     }
@@ -193,7 +197,10 @@ fun BottomBarGlass(
                     if (itemCount > 0) {
                         val itemWidth = width / itemCount
                         val widthRatio = indicatorWidthPercent.coerceIn(40, 120) / 100f
-                        val capsuleHeight = height * 0.62f * pressScale
+                        // 胶囊高度 = 底栏高 - 上下边距 × 2（再乘按压放大），上下居中
+                        val insetPx = capsuleInset.toPx()
+                        val capsuleHeight = (height - insetPx * 2f)
+                            .coerceAtLeast(8.dp.toPx()) * pressScale
                         val capsuleWidth = (itemWidth * widthRatio * pressScale)
                             .coerceAtMost(width)
                         val top = (height - capsuleHeight) / 2f
