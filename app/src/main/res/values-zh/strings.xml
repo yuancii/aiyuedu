@@ -1631,6 +1631,10 @@
     <string name="bottom_bar_margin_summary">数值越小底栏越宽(dp)</string>
     <string name="bottom_bar_indicator_width">选中胶囊宽度</string>
     <string name="bottom_bar_indicator_width_summary">占单格宽度的百分比</string>
+    <string name="bottom_bar_magnify">图标放大倍率</string>
+    <string name="bottom_bar_magnify_summary">按住/拖动底栏时放大胶囊附近的图标（100% 为关闭）</string>
+    <string name="bottom_bar_surface_color">底栏颜色</string>
+    <string name="bottom_bar_surface_color_summary">底栏玻璃底色，透明为跟随主题；不改变透明度</string>
     <string name="bottom_bar_effect_color">动效颜色</string>
     <string name="bottom_bar_effect_color_summary">选中胶囊与按压光晕的颜色</string>
     <string name="bottom_bar_skin_assign">分配图集</string>

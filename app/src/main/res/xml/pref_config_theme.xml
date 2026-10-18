@@ -133,11 +133,34 @@
         app:iconSpaceReserved="false"
         app:selectable="false" />
 
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="100"
+        android:key="bottomBarMagnify"
+        android:summary="@string/bottom_bar_magnify_summary"
+        android:title="@string/bottom_bar_magnify"
+        app:MaxValue="200"
+        app:MinValue="100"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
     <io.legado.app.lib.prefs.ColorPreference
         android:defaultValue="@color/md_red_600"
         android:key="bottomBarEffectColor"
         android:summary="@string/bottom_bar_effect_color_summary"
         android:title="@string/bottom_bar_effect_color"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:cpv_dialogType="preset"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.ColorPreference
+        android:defaultValue="@android:color/transparent"
+        android:key="bottomBarSurfaceColor"
+        android:summary="@string/bottom_bar_surface_color_summary"
+        android:title="@string/bottom_bar_surface_color"
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:cpv_dialogType="preset"

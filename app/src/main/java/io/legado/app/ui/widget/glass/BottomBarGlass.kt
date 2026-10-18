@@ -24,14 +24,24 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 /**
- * 液态玻璃底栏面板。
+ * 液态玻璃底栏面板（按 kyant0 backdrop 的分层思路组装）。
  *
- * 图层内容（全部被裁剪在圆角形状内）：
- *  1. vibrancy 提饱和 + blur 背景模糊 + lens 边缘折射/色散 —— 玻璃质感
- *  2. 表面着色 —— 由"透明度"设置控制
- *  3. 选中项胶囊 —— 渐变玻璃质感 + 细亮边，跟手拖动 / 弹簧滑动，按下放大并提亮
+ * 自下而上的图层：
+ *  - L0 背景采样：`ViewBackdrop` + `vibrancy()` + `blur()` + `lens()`（真实内容透出）
+ *  - L1 表面着色：竖向渐变（上略实、下略透），避免下沿发白
+ *  - L2 边缘光：1dp 内描边（上亮下暗）+ 顶部一条镜面高光
+ *  - L3 选中胶囊：外发光 → 本体渐变 → 顶部内高光 → 上亮下暗亮边
+ *  - L4 动效：弹簧滑动 / 拖动跟手 / 按压与拖动时放大提亮 / **拖动时液态拉伸**
+ *
+ * **液态拉伸（L4）**：拖动时胶囊不再"瞬移"，而是从"原选中格"到"手指位置"
+ * 拉成一条两端为半圆的胶囊（stadium），像液体被指头拖过去；松手后由
+ * [Animatable] 弹簧吸附到目标格。图标本身的放大由
+ * [io.legado.app.ui.main.MainActivity] 通过 `ThemeBottomNavigationVIew.magnifyItems` 负责。
  *
  * ⚠️ 这里**只能**用 fillMaxWidth()，绝不能用 fillMaxSize()：
  * ComposeView 放在 wrap_content 的父容器里，首次测量拿到的是 AT_MOST
@@ -58,7 +68,7 @@ fun BottomBarGlass(
     pressed: Boolean,
     indicatorWidthPercent: Int,
     dragFraction: Float,
-    cornerRadius: Dp = 28.dp
+    cornerRadius: Dp = 28.dp,
 ) {
     val glassShape = RoundedCornerShape(cornerRadius)
 
@@ -79,10 +89,14 @@ fun BottomBarGlass(
     // 在组合期读取，保证位置变化会触发重绘（onDrawSurface 不在 observeReads 内）
     val capsulePosition = capsuleIndex.value
 
-    // 按压反馈：按下时胶囊明显放大 + 提亮（尺寸与亮度双重反馈）。
-    // 放大倍数取 1.45（原 1.12/1.32 都不够明显），弹簧放慢让形变看得见。
+    // 拖动中 pressed 常为 false，所以提亮/放大要同时看拖动状态
+    val dragging = dragFraction in 0f..1f
     val pressScale by animateFloatAsState(
-        targetValue = if (pressed) 1.45f else 1f,
+        targetValue = when {
+            pressed -> 1.45f
+            dragging -> 1.18f
+            else -> 1f
+        },
         animationSpec = spring(dampingRatio = 0.5f, stiffness = 600f),
         label = "bottomBarPress"
     )
@@ -99,12 +113,11 @@ fun BottomBarGlass(
                     // 本段运行在绘制路径上，一旦抛异常会中断整帧、连带吃掉底栏图标，
                     // 因此必须整体兜住（例如 lens 对不支持的形状会抛异常）
                     try {
-                        // 提饱和：参考库所有液态玻璃组件都会调用，缺了会显得灰白
+                        // L0 提饱和 + 背景模糊 + 边缘折射/色散
                         vibrancy()
                         if (blurRadius > 0.dp) {
                             blur(blurRadius.toPx())
                         }
-                        // 折射 + 色散：玻璃边缘的"液态"观感来源，需要 Android 13+
                         lens(
                             refractionHeight = 24.dp.toPx(),
                             refractionAmount = 24.dp.toPx(),
@@ -121,17 +134,56 @@ fun BottomBarGlass(
                     shape = glassShape
                 },
                 onDrawSurface = {
-                    drawRect(surfaceColor)
-                    // 按压光晕：跟随手指的柔光，替代 Material 水波纹。
-                    // 水波纹在"拖动切换选中项"时会残留在原来那一格；这个由
-                    // pressed 状态驱动，抬起即消失，不可能残留。
-                    if (pressed && dragFraction in 0f..1f) {
-                        val glowCenter = Offset(dragFraction * size.width, size.height / 2f)
-                        val glowRadius = size.height * 1.15f
+                    val width = size.width
+                    val height = size.height
+                    val radius = cornerRadius.toPx()
+                    val shapeCorner = CornerRadius(radius, radius)
+
+                    // L1 表面着色：竖向渐变（上略实、下略透），底部不能更实否则下沿发白
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                surfaceColor,
+                                surfaceColor.copy(
+                                    alpha = (surfaceColor.alpha * 0.88f).coerceIn(0f, 1f)
+                                )
+                            ),
+                            startY = 0f,
+                            endY = height
+                        )
+                    )
+
+                    // L2 边缘光：1dp 内描边（上亮下暗）+ 顶部镜面高光
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.26f),
+                                Color.White.copy(alpha = 0.04f)
+                            ),
+                            startY = 0f,
+                            endY = height
+                        ),
+                        cornerRadius = shapeCorner,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.White.copy(alpha = 0.30f), Color.Transparent),
+                            startY = 0f,
+                            endY = (height * 0.22f).coerceAtMost(10.dp.toPx())
+                        ),
+                        cornerRadius = shapeCorner,
+                        style = Stroke(width = 1.2.dp.toPx())
+                    )
+
+                    // 按压/拖动光晕：跟随手指的柔光，替代 Material 水波纹
+                    if (dragging) {
+                        val glowCenter = Offset(dragFraction * width, height / 2f)
+                        val glowRadius = height * 1.15f
                         drawCircle(
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    indicatorColor.copy(alpha = 0.30f * pressBoost),
+                                    indicatorColor.copy(alpha = 0.22f + 0.16f * pressBoost),
                                     Color.Transparent
                                 ),
                                 center = glowCenter,
@@ -141,19 +193,44 @@ fun BottomBarGlass(
                             center = glowCenter
                         )
                     }
+
                     if (itemCount > 0) {
-                        val itemWidth = size.width / itemCount
+                        val itemWidth = width / itemCount
                         val widthRatio = indicatorWidthPercent.coerceIn(40, 120) / 100f
+                        val capsuleHeight = height * 0.62f * pressScale
                         val capsuleWidth = (itemWidth * widthRatio * pressScale)
-                            .coerceAtMost(size.width)
-                        val capsuleHeight = size.height * 0.62f * pressScale
-                        val centerX = (capsulePosition + 0.5f) * itemWidth
-                        val left = centerX - capsuleWidth / 2f
-                        val top = (size.height - capsuleHeight) / 2f
+                            .coerceAtMost(width)
+                        val top = (height - capsuleHeight) / 2f
                         val corner = CornerRadius(capsuleHeight / 2f, capsuleHeight / 2f)
 
-                        // 玻璃质感：竖向渐变(上亮下深)制造厚度感，再叠一圈细亮边。
-                        // 纯色块看着是个色斑，渐变+亮边才有"玻璃颗粒"的观感。
+                        // ── 液态拉伸：拖动时从"原选中格"拉伸到"手指位置" ──
+                        val currentCenterX = (capsulePosition + 0.5f) * itemWidth
+                        val anchorCenterX = (selectedIndex + 0.5f) * itemWidth
+                        val fingerCenterX = dragFraction * width
+                        val liquid = dragging &&
+                            abs(fingerCenterX - anchorCenterX) > itemWidth * 0.08f
+                        val spanLeft = if (liquid) min(anchorCenterX, fingerCenterX) else currentCenterX
+                        val spanRight = if (liquid) max(anchorCenterX, fingerCenterX) else currentCenterX
+                        val left = (spanLeft - capsuleWidth / 2f).coerceAtLeast(0f)
+                        val right = (spanRight + capsuleWidth / 2f).coerceAtMost(width)
+                        val drawWidth = (right - left).coerceAtLeast(capsuleWidth)
+                        val capsuleCenter = Offset(left + drawWidth / 2f, height / 2f)
+
+                        // 外发光：让胶囊"浮"在玻璃上
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    indicatorColor.copy(alpha = 0.20f + 0.14f * pressBoost),
+                                    Color.Transparent
+                                ),
+                                center = capsuleCenter,
+                                radius = drawWidth * 0.75f
+                            ),
+                            radius = drawWidth * 0.75f,
+                            center = capsuleCenter
+                        )
+
+                        // 本体：竖向渐变制造厚度
                         drawRoundRect(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
@@ -164,13 +241,37 @@ fun BottomBarGlass(
                                 endY = top + capsuleHeight
                             ),
                             topLeft = Offset(left, top),
-                            size = Size(capsuleWidth, capsuleHeight),
+                            size = Size(drawWidth, capsuleHeight),
                             cornerRadius = corner
                         )
+
+                        // 顶部内高光：上半段白雾
                         drawRoundRect(
-                            color = Color.White.copy(alpha = 0.22f + 0.20f * pressBoost),
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.20f + 0.16f * pressBoost),
+                                    Color.Transparent
+                                ),
+                                startY = top,
+                                endY = top + capsuleHeight * 0.55f
+                            ),
                             topLeft = Offset(left, top),
-                            size = Size(capsuleWidth, capsuleHeight),
+                            size = Size(drawWidth, capsuleHeight),
+                            cornerRadius = corner
+                        )
+
+                        // 亮边：上亮下暗
+                        drawRoundRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.42f + 0.20f * pressBoost),
+                                    Color.White.copy(alpha = 0.10f + 0.06f * pressBoost)
+                                ),
+                                startY = top,
+                                endY = top + capsuleHeight
+                            ),
+                            topLeft = Offset(left, top),
+                            size = Size(drawWidth, capsuleHeight),
                             cornerRadius = corner,
                             style = Stroke(width = 1.dp.toPx())
                         )

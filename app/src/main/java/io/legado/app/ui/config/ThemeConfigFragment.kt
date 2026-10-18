@@ -219,6 +219,8 @@ class ThemeConfigFragment : PreferenceFragment(),
             PreferKey.bottomBarHeight,
             PreferKey.bottomBarMargin,
             PreferKey.bottomBarIndicatorWidth,
+            PreferKey.bottomBarMagnify,
+            PreferKey.bottomBarSurfaceColor,
             PreferKey.bottomBarEffectColor -> postEvent(EventBus.BOTTOM_BAR_GLASS, "")
         }
 

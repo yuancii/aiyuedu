@@ -119,6 +119,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private val EXIT_INTERVAL = 2000L
     /** 悬浮底栏玻璃表面透明度 0~255，来源 AppConfig.bottomBarGlassAlpha */
     private val glassSurfaceAlpha = mutableStateOf(204)
+    /** 底栏玻璃底色（0 = 跟随主题），来源 AppConfig.bottomBarSurfaceColor */
+    private val bottomBarSurfaceTint = mutableStateOf(0)
     /** 悬浮底栏玻璃模糊半径(dp)，来源 AppConfig.bottomBarGlassBlur */
     private val glassBlurDp = mutableStateOf(24)
     /** 选中胶囊宽度（占单格百分比），来源 AppConfig.bottomBarIndicatorWidth */
@@ -293,10 +295,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         // 所以在 ThemeBottomNavigationVIew 的 dispatchTouchEvent 里回调
         bottomNavigationView.onPressChanged = { pressed ->
             bottomBarPressed.value = pressed
+            if (pressed) updateTabMagnify(-1f) else bottomNavigationView.resetItemScale()
         }
         // 在底栏上按住横向拖动：胶囊跟手，松手切到手指所在的那一格
         bottomNavigationView.onDragFractionChanged = { fraction ->
             bottomBarDragFraction.value = fraction
+            if (fraction in 0f..1f) updateTabMagnify(fraction)
         }
         bottomNavigationView.onDragEnd = { fraction ->
             val count = bottomBarItemCount.value
@@ -307,6 +311,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 binding.viewPagerMain.setCurrentItem(index, false)
             }
             bottomBarDragFraction.value = -1f
+            bottomNavigationView.resetItemScale()
         }
         if (AppConfig.isEInkMode) {
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
@@ -337,6 +342,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun upBottomBarGlass() {
         glassSurfaceAlpha.value = AppConfig.bottomBarGlassAlpha.coerceIn(0, 100) * 255 / 100
         glassBlurDp.value = AppConfig.bottomBarGlassBlur.coerceIn(0, 60)
+        bottomBarSurfaceTint.value = AppConfig.bottomBarSurfaceColor
         indicatorWidthPercent.value = AppConfig.bottomBarIndicatorWidth.coerceIn(40, 120)
         bottomBarEffectColor.value = AppConfig.bottomBarEffectColor
     }
@@ -361,9 +367,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool
         )
         binding.bottomBarGlass.setContent {
+            // 底色：自定义色（alpha>0）优先，否则沿用主题白/黑；透明度仍由设置项控制
+            val surfaceTint = bottomBarSurfaceTint.value
+            val glassSurface = if ((surfaceTint ushr 24) != 0) Color(surfaceTint) else glassBase
             BottomBarGlass(
                 backdrop = backdrop,
-                surfaceColor = glassBase.copy(alpha = glassSurfaceAlpha.value / 255f),
+                surfaceColor = glassSurface.copy(alpha = glassSurfaceAlpha.value / 255f),
                 blurRadius = glassBlurDp.value.dp,
                 indicatorColor = Color(bottomBarEffectColor.value),
                 itemCount = bottomBarItemCount.value,
@@ -381,6 +390,27 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 glass.layoutParams = glass.layoutParams.apply { height = bar.height }
             }
         }
+    }
+
+    /**
+     * 图标放大镜：按下/拖动时让胶囊附近的图标放大，松手恢复。
+     *
+     * @param centerXFraction 胶囊中心横向比例(0..1)；-1 表示用当前选中项定位
+     */
+    private fun updateTabMagnify(centerXFraction: Float) {
+        val bar = binding.bottomNavigationView
+        val scale = AppConfig.bottomBarMagnify.coerceIn(100, 200) / 100f
+        if (scale <= 1.001f || bar.width <= 0) {
+            bar.resetItemScale()
+            return
+        }
+        val count = bottomBarItemCount.value.coerceAtLeast(1)
+        val centerX = if (centerXFraction in 0f..1f) {
+            centerXFraction * bar.width
+        } else {
+            (bottomBarSelectedIndex.value + 0.5f) * bar.width / count
+        }
+        bar.magnifyItems(centerX, scale)
     }
 
     /**

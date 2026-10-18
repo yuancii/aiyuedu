@@ -498,6 +498,23 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.bottomBarIndicatorWidth, value.coerceIn(40, 120))
         }
 
+    /** 图标放大倍率（百分比）：100 = 不放大，按住/拖动底栏时放大胶囊附近的图标。 */
+    var bottomBarMagnify: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarMagnify, 100)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarMagnify, value.coerceIn(100, 200))
+        }
+
+    /**
+     * 底栏玻璃底色：0（或 alpha=0）= 跟随主题（浅色白 / 深色近黑）。
+     * 只决定色相，透明度仍由 [bottomBarGlassAlpha] 控制。
+     */
+    var bottomBarSurfaceColor: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarSurfaceColor, 0)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarSurfaceColor, value)
+        }
+
     /** 悬浮底栏动效颜色（选中胶囊 + 按压光晕） */
     var bottomBarEffectColor: Int
         get() = appCtx.getPrefInt(

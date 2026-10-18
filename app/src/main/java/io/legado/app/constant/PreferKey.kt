@@ -298,5 +298,9 @@ object PreferKey {
     const val bottomBarHeight = "bottomBarHeight"
     const val bottomBarMargin = "bottomBarMargin"
     const val bottomBarIndicatorWidth = "bottomBarIndicatorWidth"
+    /** 胶囊放大倍率（100 = 关闭，200 = 2 倍）。按住底栏时放大胶囊下方的页面内容。 */
+    const val bottomBarMagnify = "bottomBarMagnify"
     const val bottomBarEffectColor = "bottomBarEffectColor"
+    /** 底栏玻璃底色（0 = 跟随主题）。只决定色相，透明度由 bottomBarGlassAlpha 控制。 */
+    const val bottomBarSurfaceColor = "bottomBarSurfaceColor"
 }

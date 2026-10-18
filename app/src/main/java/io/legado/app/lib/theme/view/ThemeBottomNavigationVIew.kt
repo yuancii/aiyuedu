@@ -138,4 +138,38 @@ class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
         return badgeBinding.viewBadge
     }
 
+    /**
+     * 图标"放大镜"：按下/拖动时让胶囊附近的图标按距离放大。
+     *
+     * @param centerX  胶囊中心的本控件内坐标(px)
+     * @param maxScale 正上方图标的放大倍数(≥1)
+     */
+    fun magnifyItems(centerX: Float, maxScale: Float) {
+        val menuView = getChildAt(0) as? ViewGroup ?: return
+        val count = menuView.childCount
+        if (count == 0 || width <= 0) return
+        val itemWidth = width.toFloat() / count
+        val range = itemWidth * 1.1f
+        for (index in 0 until count) {
+            val item = menuView.getChildAt(index) ?: continue
+            val itemCenter = (index + 0.5f) * itemWidth
+            val t = (1f - kotlin.math.abs(itemCenter - centerX) / range).coerceIn(0f, 1f)
+            val scale = 1f + (maxScale - 1f) * t
+            item.pivotX = item.width / 2f
+            item.pivotY = item.height / 2f
+            item.scaleX = scale
+            item.scaleY = scale
+        }
+    }
+
+    /** 恢复所有图标原始大小 */
+    fun resetItemScale() {
+        val menuView = getChildAt(0) as? ViewGroup ?: return
+        for (index in 0 until menuView.childCount) {
+            val item = menuView.getChildAt(index) ?: continue
+            item.scaleX = 1f
+            item.scaleY = 1f
+        }
+    }
+
 }
