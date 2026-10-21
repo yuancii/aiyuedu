@@ -199,6 +199,8 @@ class ReadBookActivity : BaseReadBookActivity(),
     HighlightStyleDialog.StyleHost,
     LayoutProgressListener {
 
+    private var openingPublisherLayout = false
+
     private val tocActivity =
         registerForActivityResult(TocActivityResult()) {
             it?.let {
@@ -827,6 +829,10 @@ class ReadBookActivity : BaseReadBookActivity(),
      */
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.menu_epub_publisher -> {
+                openPublisherLayout()
+                return true
+            }
             R.id.menu_reader_more -> {
                 val toolbar = binding.readMenu.findViewById<View>(R.id.toolbar)
                 menu?.let { showReaderMoreMenu(toolbar, it) }
@@ -961,6 +967,29 @@ class ReadBookActivity : BaseReadBookActivity(),
             R.id.menu_help -> showHelp()
         }
         return super.onCompatOptionsItemSelected(item)
+    }
+
+    private fun openPublisherLayout(useNativePosition: Boolean = true) {
+        if (openingPublisherLayout) return
+        val book = ReadBook.book?.takeIf { it.isEpub } ?: return
+        openingPublisherLayout = true
+        binding.readView.updateScrollReadPosition()
+        autoPageStop()
+        if (BaseReadAloudService.isRun) ReadAloud.stop(this)
+        val text = ReadBook.curTextChapter?.pages?.joinToString("") { it.text }.orEmpty()
+        val position = ReadBook.durChapterPos.coerceIn(0, text.length)
+        book.config.epubUsePublisherLayout = true
+        if (useNativePosition) book.config.epubPublisherLocator = null
+        ReadBook.saveRead()
+        val publisherIntent = Intent(this, EpubPublisherActivity::class.java)
+            .putExtra("bookUrl", book.bookUrl)
+            .putExtra("index", ReadBook.durChapterIndex)
+            .putExtra("chapterPos", position)
+        if (useNativePosition) publisherIntent
+            .putExtra("publisherQuote", text.substring(position).take(64))
+            .putExtra("publisherFraction", if (text.isEmpty()) 0.0 else position.toDouble() / text.length)
+        startActivity(publisherIntent)
+        finish()
     }
 
     private fun refreshContentAll(book: Book) {
@@ -1562,6 +1591,10 @@ class ReadBookActivity : BaseReadBookActivity(),
      */
     override fun contentLoadFinish() {
         lifecycleScope.launch(Main.immediate) {
+            if (ReadBook.book?.let { it.isEpub && it.readConfig?.epubUsePublisherLayout == true } == true) {
+                openPublisherLayout(useNativePosition = false)
+                return@launch
+            }
             observeBookmarks()
             if (intent.getBooleanExtra("readAloud", false)) {
                 intent.removeExtra("readAloud")
@@ -2982,7 +3015,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         binding.readView.onDestroy()
         val wasCurrentReader = ReadBook.unregister(this)
         handler.removeCallbacksAndMessages(null) // 清理Handler消息
-        if (wasCurrentReader && !ReadBook.inBookshelf && !isChangingConfigurations) {
+        if (wasCurrentReader && !ReadBook.inBookshelf && !isChangingConfigurations && !openingPublisherLayout) {
             viewModel.removeFromBookshelf(null)
         }
         if (!BuildConfig.DEBUG) {

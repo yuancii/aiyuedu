@@ -41,6 +41,7 @@ import io.legado.app.constant.AppConst
 import io.legado.app.data.entities.Book
 import io.legado.app.help.IntentHelp
 import io.legado.app.help.book.isAudio
+import io.legado.app.help.book.isEpub
 import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isVideo
@@ -49,6 +50,7 @@ import io.legado.app.ui.book.audio.AudioPlayActivity
 import io.legado.app.ui.video.VideoPlayerActivity
 import io.legado.app.ui.book.manga.ReadMangaActivity
 import io.legado.app.ui.book.read.ReadBookActivity
+import io.legado.app.ui.book.read.EpubPublisherActivity
 import splitties.systemservices.clipboardManager
 import splitties.systemservices.connectivityManager
 import splitties.systemservices.uiModeManager
@@ -68,6 +70,7 @@ fun Context.startActivityForBook(
     configIntent: Intent.() -> Unit = {},
 ) {
     val cls = when {
+        book.isEpub && book.readConfig?.epubUsePublisherLayout == true -> EpubPublisherActivity::class.java
         book.isVideo -> VideoPlayerActivity::class.java
         book.isAudio -> AudioPlayActivity::class.java
         !book.isLocal && book.isImage && AppConfig.showMangaUi -> ReadMangaActivity::class.java
