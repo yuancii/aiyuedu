@@ -199,6 +199,59 @@ class ReadBookActivity : BaseReadBookActivity(),
     HighlightStyleDialog.StyleHost,
     LayoutProgressListener {
 
+    private val publisherReader: EpubPublisherReader by lazy {
+        EpubPublisherReader(this, binding.epubContent) {
+            binding.readView.externalRendererActive = publisherReader.active
+            updatePublisherViewport()
+            invalidateOptionsMenu()
+        }
+    }
+
+    private fun updatePublisherViewport() {
+        if (!publisherReader.active) return
+        val content = binding.readView.curPage.findViewById<View>(R.id.content_text_view) ?: return
+        if (content.height <= 0) return
+        val position = IntArray(2)
+        val origin = IntArray(2)
+        content.getLocationInWindow(position)
+        binding.root.getLocationInWindow(origin)
+        val top = (position[1] - origin[1]).coerceAtLeast(0)
+        val bottom = (binding.root.height - top - content.height).coerceAtLeast(0)
+        val left = (position[0] - origin[0]).coerceAtLeast(0)
+        val right = (binding.root.width - left - content.width).coerceAtLeast(0)
+        val params = binding.epubContent.layoutParams as android.widget.FrameLayout.LayoutParams
+        if (params.topMargin != top || params.bottomMargin != bottom ||
+            params.leftMargin != left || params.rightMargin != right) {
+            params.setMargins(left, top, right, bottom)
+            binding.epubContent.layoutParams = params
+        }
+    }
+
+    fun onPublisherPositionChanged() {
+        ReadBook.curTextChapter?.getPageByReadPos(ReadBook.durChapterPos)?.let {
+            binding.readView.curPage.setProgress(it)
+        }
+    }
+
+    val isEpubPublisherLayout: Boolean
+        get() = ReadBook.book?.isEpub == true && ReadBook.book?.config?.epubUsePublisherLayout == true
+
+    fun setEpubPublisherLayout(enabled: Boolean) {
+        val book = ReadBook.book?.takeIf { it.isEpub } ?: return
+        if (enabled == publisherReader.active) return
+        if (enabled) {
+            binding.readView.updateScrollReadPosition()
+            binding.readView.cancelSelect()
+            autoPageStop()
+            book.config.epubUsePublisherLayout = true
+            ReadBook.saveRead()
+            publisherReader.show(fromNative = true)
+        } else publisherReader.hide {
+            binding.readView.upContent(resetPageOffset = true)
+            binding.readMenu.upBookView()
+        }
+    }
+
     private val tocActivity =
         registerForActivityResult(TocActivityResult()) {
             it?.let {
@@ -365,6 +418,7 @@ class ReadBookActivity : BaseReadBookActivity(),
             }
         }
         binding.readView.pdfZoom.restore(savedInstanceState?.getBundle("pdfZoom"))
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener { updatePublisherViewport() }
         aloudControls.restore(savedInstanceState?.getBundle("aloudControls"))
         binding.cursorLeft.setColorFilter(accentColor)
         binding.cursorRight.setColorFilter(accentColor)
@@ -423,6 +477,7 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun onNewIntent(intent: Intent) {
+        publisherReader.dispose()
         super.onNewIntent(intent)
         setIntent(intent)
         editingHighlight = null
@@ -457,6 +512,7 @@ class ReadBookActivity : BaseReadBookActivity(),
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onResume() {
         super.onResume()
+        publisherReader.onResume()
         ReadBook.readStartTime = System.currentTimeMillis()
         if (bookChanged) {
             bookChanged = false
@@ -506,7 +562,8 @@ class ReadBookActivity : BaseReadBookActivity(),
         binding.readView.cancelTouchGestures()
         autoPageStop()
         backupJob?.cancel()
-        binding.readView.updateScrollReadPosition()
+        if (publisherReader.active) publisherReader.onPause()
+        else binding.readView.updateScrollReadPosition()
         ReadBook.saveRead()
         ReadBook.cancelPreDownloadTask()
         unregisterReceiver(timeBatteryReceiver)
@@ -1205,6 +1262,21 @@ class ReadBookActivity : BaseReadBookActivity(),
         )
     }
 
+    fun showPublisherTextActions(selection: org.json.JSONObject) {
+        positionPublisherSelection(selection)
+        val density = resources.displayMetrics.density
+        textActionMenu.show(binding.textMenuPosition, binding.root.height,
+            binding.textMenuPosition.x.toInt(), binding.textMenuPosition.y.toInt(),
+            (selection.optDouble("bottom") * density).toInt(), binding.root.width,
+            (selection.optDouble("bottom") * density).toInt())
+    }
+
+    fun positionPublisherSelection(selection: org.json.JSONObject) {
+        val density = resources.displayMetrics.density
+        binding.textMenuPosition.x = selection.optDouble("x").toFloat() * density + binding.epubContent.left
+        binding.textMenuPosition.y = selection.optDouble("y").toFloat() * density + binding.epubContent.top
+    }
+
     private var editingHighlightTime: Long? = null
     private var editingHighlightSnapshot: BookHighlight? = null
     private var editingHighlight: BookHighlight?
@@ -1328,13 +1400,15 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     private fun selectedHighlightRange(): BookHighlight? {
         if (selectedText.isEmpty()) return null
-        return binding.readView.curPage.createHighlight(HighlightStyle())
+        return if (publisherReader.active) publisherReader.selectionHighlight(HighlightStyle())
+        else binding.readView.curPage.createHighlight(HighlightStyle())
     }
 
     private fun clearSelectedHighlightFormat() {
         val selection = selectedHighlightRange() ?: return
         val titleLength = selection.layoutTitleLength.takeIf { it >= 0 } ?: return
-        val chapter = binding.readView.curPage.textPage.getTextChapter()
+        val chapter = if (publisherReader.active) ReadBook.curTextChapter ?: return
+        else binding.readView.curPage.textPage.getTextChapter()
         ReadBook.clearHighlightStyleInRange(
             chapter,
             titleLength,
@@ -1345,7 +1419,8 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     private fun selectedHighlightsWithFormat(): List<BookHighlight> {
         val selection = selectedHighlightRange() ?: return emptyList()
-        val chapter = binding.readView.curPage.textPage.getTextChapter()
+        val chapter = if (publisherReader.active) ReadBook.curTextChapter ?: return emptyList()
+        else binding.readView.curPage.textPage.getTextChapter()
         val titleLength = selection.layoutTitleLength.takeIf { it >= 0 } ?: return emptyList()
         val selectionStart = selection.bodyStart(titleLength)
         val selectionEnd = selection.bodyEnd(titleLength)
@@ -1357,12 +1432,30 @@ class ReadBookActivity : BaseReadBookActivity(),
             .map { it.first }
     }
 
-    override val selectedText: String get() = binding.readView.getSelectText()
+    override val selectedText: String get() = if (publisherReader.active) publisherReader.selectedText
+        else binding.readView.getSelectText()
 
     /**
      * 文本选择菜单操作
      */
     override fun onMenuItemSelected(itemId: Int): Boolean {
+        if (publisherReader.active) {
+            when (itemId) {
+                R.id.menu_bookmark -> {
+                    publisherReader.bookmark { bookmark ->
+                        if (bookmark != null) showDialogFragment(BookmarkDialog(bookmark))
+                        else toastOnUi(R.string.create_bookmark_error)
+                    }
+                    return true
+                }
+                R.id.menu_aloud_from_here -> {
+                    publisherReader.selectionHighlight(HighlightStyle())?.let { ReadBook.durChapterPos = it.chapterPos }
+                    ReadBook.readAloud()
+                    return true
+                }
+                R.id.menu_aloud -> { speak(selectedText); return true }
+            }
+        }
         when (itemId) {
             R.id.menu_aloud_from_here -> lifecycleScope.launch {
                 binding.readView.aloudStartSelect()
@@ -1394,10 +1487,12 @@ class ReadBookActivity : BaseReadBookActivity(),
                 )
                 val anchorX = binding.textMenuPosition.x
                 val anchorY = binding.textMenuPosition.y
-                val highlight = it.createHighlight(style)
+                val highlight = if (publisherReader.active) publisherReader.selectionHighlight(style)
+                    else it.createHighlight(style)
                 if (highlight == null) {
                     toastOnUi(R.string.create_highlight_error)
                 } else {
+                    if (publisherReader.active) publisherReader.remember(highlight)
                     ReadBook.addHighlight(highlight)
                     binding.root.post {
                         showHighlightActionMenu(highlight, anchorX, anchorY)
@@ -1449,6 +1544,7 @@ class ReadBookActivity : BaseReadBookActivity(),
      */
     override fun onMenuActionFinally() = binding.run {
         textActionMenu.dismiss()
+        if (publisherReader.active) publisherReader.clearSelection()
         readView.cancelSelect()
     }
 
@@ -1482,7 +1578,9 @@ class ReadBookActivity : BaseReadBookActivity(),
         if (menuLayoutIsVisible || !AppConfig.mouseWheelPage) {
             return
         }
-        if (binding.readView.isScroll) {
+        if (publisherReader.active) {
+            publisherReader.turnPage(direction == PageDirection.NEXT)
+        } else if (binding.readView.isScroll) {
             // 滚动视图时滚动,否则翻页
             val scrollDistance = (distance * (AppConfig.mouseWheelScrollSpeed / 2f)).toInt()
             (binding.readView.pageDelegate as? ScrollPageDelegate)?.curPage?.scroll(scrollDistance)
@@ -1539,6 +1637,10 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     private fun keyPage(direction: PageDirection) {
+        if (publisherReader.active) {
+            if (direction != PageDirection.NONE) publisherReader.turnPage(direction == PageDirection.NEXT)
+            return
+        }
         binding.readView.cancelTouchGestures()
         binding.readView.cancelSelect()
         binding.readView.pageDelegate?.isCancel = false
@@ -1562,6 +1664,10 @@ class ReadBookActivity : BaseReadBookActivity(),
      */
     override fun contentLoadFinish() {
         lifecycleScope.launch(Main.immediate) {
+            if (ReadBook.book?.let { it.isEpub && it.readConfig?.epubUsePublisherLayout == true } == true) {
+                if (!publisherReader.active) publisherReader.show(fromNative = intent.hasExtra("chapterPos") ||
+                    intent.hasExtra(TocActivityResult.EXTRA_HIGHLIGHT_ANCHOR_TEXT))
+            }
             observeBookmarks()
             if (intent.getBooleanExtra("readAloud", false)) {
                 intent.removeExtra("readAloud")
@@ -1586,6 +1692,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                 (readPositionVersion == null || isReadPositionVersionCurrent(readPositionVersion))
             binding.readView.cancelTouchGestures()
             binding.readView.upContent(relativePosition, shouldResetPageOffset)
+            if (publisherReader.active) publisherReader.onNativeContent(shouldResetPageOffset)
             scheduleAloudFollowCheck()
             observeBookmarks()
             upBookmarkIndicator()
@@ -1599,10 +1706,12 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun readPositionVersion(): Long {
+        if (publisherReader.active) return publisherReader.positionVersion
         return binding.readView.getReadPositionVersion()
     }
 
     override fun isReadPositionVersionCurrent(version: Long): Boolean {
+        if (publisherReader.active) return publisherReader.positionVersion == version
         return binding.readView.getReadPositionVersion() == version
     }
 
@@ -1616,6 +1725,7 @@ class ReadBookActivity : BaseReadBookActivity(),
             (readPositionVersion == null || isReadPositionVersionCurrent(readPositionVersion))
         binding.readView.cancelTouchGestures()
         binding.readView.upContent(relativePosition, shouldResetPageOffset)
+        if (publisherReader.active) publisherReader.onNativeContent(shouldResetPageOffset)
         scheduleAloudFollowCheck()
         observeBookmarks()
         upBookmarkIndicator()
@@ -1642,6 +1752,7 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun cancelSelect() {
         runOnUiThread {
+            if (publisherReader.active) publisherReader.clearSelection()
             binding.readView.cancelSelect()
         }
     }
@@ -2461,6 +2572,19 @@ class ReadBookActivity : BaseReadBookActivity(),
      * 朗读按钮
      */
     override fun onClickReadAloud() {
+        if (publisherReader.active) {
+            publisherReader.capture {
+                when {
+                    !BaseReadAloudService.isRun -> {
+                        ReadAloud.upReadAloudClass()
+                        ReadBook.readAloud(rewindToSentenceStart = AppConfig.readAloudStartAtSentence)
+                    }
+                    BaseReadAloudService.pause -> ReadAloud.resume(this)
+                    else -> ReadAloud.pause(this)
+                }
+            }
+            return
+        }
         autoPageStop()
         when {
             !BaseReadAloudService.isRun -> {
@@ -2751,6 +2875,13 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun addBookmark() {
+        if (publisherReader.active) {
+            publisherReader.bookmark { bookmark ->
+                if (bookmark != null) showDialogFragment(BookmarkDialog(bookmark))
+                else toastOnUi(R.string.create_bookmark_error)
+            }
+            return
+        }
         val book = ReadBook.book
         val page = ReadBook.curTextChapter?.getPage(ReadBook.durPageIndex)
         if (book != null && page != null) {
@@ -2765,6 +2896,13 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun toggleBookmark() {
+        if (publisherReader.active) {
+            publisherReader.visibleBookmarks(bookmarks) { visible ->
+                if (visible.isEmpty()) addBookmark()
+                else lifecycleScope.launch { deleteBookmarks(visible) }
+            }
+            return
+        }
         if (bookmarkTogglePending) return
         val book = ReadBook.book ?: return
         val page = binding.readView.curPage.textPage
@@ -2972,6 +3110,7 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun onDestroy() {
+        publisherReader.dispose()
         super.onDestroy()
         aloudControls.dispose()
         tts?.clearTts()
@@ -3001,7 +3140,7 @@ class ReadBookActivity : BaseReadBookActivity(),
             }
         }
         observeEvent<ArrayList<Int>>(EventBus.UP_CONFIG) { values ->
-            if (5 in values && isInitFinish) {
+            if (5 in values && isInitFinish && !publisherReader.active) {
                 binding.readView.updateScrollReadPosition(preserveText = true)
             }
             values.forEach { value ->
@@ -3017,7 +3156,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                     5 -> if (isInitFinish) {
                         ReadBook.loadContent(
                             resetPageOffset = ReadBook.isScroll,
-                            readPositionVersion = readView.getReadPositionVersion(),
+                            readPositionVersion = readPositionVersion(),
                         )
                     }
                     6 -> readView.upContent(resetPageOffset = false)
@@ -3029,6 +3168,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                     13 -> upPageAnim()
                 }
             }
+            publisherReader.onConfigChanged(preservePosition = 5 in values)
             updateReadAloudFloatBar()
         }
         observeEvent<Int>(EventBus.ALOUD_STATE) {

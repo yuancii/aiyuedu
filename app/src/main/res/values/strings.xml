@@ -1862,4 +1862,11 @@
     <string name="reimport_book_source">Reimport this book’s source</string>
     <string name="customize_my">Customize My page</string>
     <string name="my_more_items">Move selected items to More</string>
+    <string name="epub_switch_to_publisher">EPUB: book layout</string>
+    <string name="epub_switch_to_reader">Reader layout</string>
+    <string name="epub_publisher_help">Book layout</string>
+    <string name="epub_publisher_mode">Book layout</string>
+    <string name="epub_publisher_error">Unable to display book layout: %s. You can switch to reader layout.</string>
+    <string name="epub_previous_document">Previous section</string>
+    <string name="epub_next_document">Next section</string>
 </resources>
