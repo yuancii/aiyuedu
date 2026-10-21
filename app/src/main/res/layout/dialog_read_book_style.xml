@@ -8,6 +8,35 @@
     android:background="@color/background"
     android:orientation="vertical">
 
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/epub_layout_modes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:singleSelection="true"
+        app:selectionRequired="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/epub_reader_mode"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/epub_switch_to_reader" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/epub_publisher_mode"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/epub_publisher_mode" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
     <HorizontalScrollView
         android:id="@+id/style_toolbar_scroll"
         android:layout_width="match_parent"

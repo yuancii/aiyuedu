@@ -38,7 +38,7 @@ internal fun epubFragment(href: String): String? = href.substringAfter('#', "")
     }
 
 /** Keep publisher styles, links, SVG and fonts; book-supplied executable content is removed. */
-internal fun publisherDocument(bytes: ByteArray): ByteArray {
+internal fun publisherDocument(bytes: ByteArray, textTransform: ((String) -> String)? = null): ByteArray {
     val document = bytes.inputStream().use { Jsoup.parse(it, null, "", Parser.xmlParser()) }
     document.outputSettings().syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.html)
         .charset(Charsets.UTF_8).prettyPrint(false)
@@ -48,6 +48,10 @@ internal fun publisherDocument(bytes: ByteArray): ByteArray {
         style.empty().appendChild(org.jsoup.nodes.DataNode(css))
     }
     document.select("meta[http-equiv]").remove()
+    if (textTransform != null) document.select("body, body *").forEach { element ->
+        if (element.normalName() !in setOf("style", "script", "noscript"))
+            element.textNodes().forEach { node -> node.text(textTransform(node.wholeText)) }
+    }
     document.allElements.forEach { element ->
         element.attributes().asList().forEach { attribute ->
             val name = attribute.key.lowercase()
@@ -70,6 +74,12 @@ internal fun publisherDocument(bytes: ByteArray): ByteArray {
 /** Quote-based mapping tolerates native title insertion and whitespace normalization. */
 internal fun epubTextPosition(text: String, quote: String, fraction: Double): Int {
     val progress = fraction.takeIf(Double::isFinite)?.coerceIn(0.0, 1.0) ?: 0.0
+    return epubTextRange(text, quote, progress)?.first ?: (progress * text.length).toInt()
+}
+
+/** End is exclusive. An annotation must match its text; never guess a range from progress. */
+internal fun epubTextRange(text: String, quote: String, fraction: Double): Pair<Int, Int>? {
+    val progress = fraction.takeIf(Double::isFinite)?.coerceIn(0.0, 1.0) ?: 0.0
     if (quote.isNotBlank()) {
         val compact = StringBuilder()
         val offsets = ArrayList<Int>()
@@ -85,8 +95,8 @@ internal fun epubTextPosition(text: String, quote: String, fraction: Double): In
                 if (best < 0 || kotlin.math.abs(match - expected) < kotlin.math.abs(best - expected)) best = match
                 match = compact.indexOf(needle, match + 1)
             }
-            if (best >= 0) return offsets[best]
+            if (best >= 0) return offsets[best] to (offsets[best + needle.length - 1] + 1)
         }
     }
-    return (progress * text.length).toInt()
+    return null
 }

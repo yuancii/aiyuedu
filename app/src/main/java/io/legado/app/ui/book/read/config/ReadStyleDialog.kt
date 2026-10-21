@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.core.view.get
+import androidx.core.view.isVisible
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
@@ -17,6 +18,7 @@ import io.legado.app.databinding.DialogReadBookStyleBinding
 import io.legado.app.databinding.ItemReadStyleBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
+import io.legado.app.help.book.isEpub
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.bottomBackground
@@ -102,12 +104,17 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     }
 
     private fun initData() {
+        binding.epubLayoutModes.isVisible = ReadBook.book?.isEpub == true
+        binding.epubLayoutModes.check(if (callBack?.isEpubPublisherLayout == true)
+            R.id.epub_publisher_mode else R.id.epub_reader_mode)
         binding.cbShareLayout.isChecked = ReadBookConfig.shareLayout
         upView()
         styleAdapter.setItems(ReadBookConfig.configList)
     }
 
     private fun initViewEvent() = binding.run {
+        epubReaderMode.setOnClickListener { callBack?.setEpubPublisherLayout(false) }
+        epubPublisherMode.setOnClickListener { callBack?.setEpubPublisherLayout(true) }
         chineseConverter.onChanged {
             ChineseUtils.unLoad(*TransType.entries.toTypedArray())
             postEvent(EventBus.UP_CONFIG, arrayListOf(5))

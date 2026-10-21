@@ -124,11 +124,6 @@
     <group android:id="@+id/menu_group_epub">
 
         <item
-            android:id="@+id/menu_epub_publisher"
-            android:title="@string/epub_switch_to_publisher"
-            app:showAsAction="never" />
-
-        <item
             android:id="@+id/menu_del_ruby_tag"
             android:checkable="true"
             android:checked="false"

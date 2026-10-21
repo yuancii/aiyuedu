@@ -12,6 +12,8 @@ import java.util.UUID
 
 /** Owns a separate ZIP handle so native parser cache eviction cannot invalidate a WebView. */
 class EpubPublisherSession(book: Book) : AutoCloseable {
+    @Volatile
+    var textTransform: ((String) -> String)? = null
     private val descriptor = requireNotNull(BookHelp.getBookPFD(book)) { "Cannot open EPUB" }
     private val zip = try { AndroidZipFile(descriptor, book.originName) }
         catch (error: Throwable) { descriptor.close(); throw error }
@@ -73,7 +75,7 @@ class EpubPublisherSession(book: Book) : AutoCloseable {
         val end = if (next == start) start + 1 else next ?: spine.size
         for (path in spine.subList(start, end)) {
             val text = bytes(path).inputStream().use { Jsoup.parse(it, null, "").body().text() }
-            if (text.filterNot(Char::isWhitespace).contains(needle)) return path
+            if ((textTransform?.invoke(text) ?: text).filterNot(Char::isWhitespace).contains(needle)) return path
         }
         return startPath
     }
@@ -94,7 +96,8 @@ class EpubPublisherSession(book: Book) : AutoCloseable {
         val path = pathForUrl(url) ?: return blocked()
         return try {
             val mime = mimeTypes[path] ?: mime(path)
-            val data = bytes(path).let { if (mime == "text/html" || mime == "application/xhtml+xml") publisherDocument(it) else it }
+            val data = bytes(path).let { if (mime == "text/html" || mime == "application/xhtml+xml")
+                publisherDocument(it, textTransform) else it }
             WebResourceResponse(if (mime == "application/xhtml+xml") "text/html" else mime,
                 if (mime == "text/html" || mime == "application/xhtml+xml") "UTF-8" else null,
                 200, "OK", mapOf(

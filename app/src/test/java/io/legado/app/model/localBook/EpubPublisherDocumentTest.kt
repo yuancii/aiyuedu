@@ -81,4 +81,39 @@ class EpubPublisherDocumentTest {
         assertEquals(0, epubTextPosition("0123456789", "", Double.NaN))
         assertEquals(0, epubTextPosition("", "", 0.7))
     }
+
+    @Test
+    fun annotationRangePreservesUtf16OffsetsAcrossWhitespaceAndEmoji() {
+        val text = "章节标题\n原文😀，\n  跨行选文。尾段"
+        val range = epubTextRange(text, "原文😀，跨行选文。", 0.0)!!
+        assertEquals(text.indexOf("原文"), range.first)
+        assertEquals(text.indexOf("尾段"), range.second)
+        assertEquals("原文😀，\n  跨行选文。", text.substring(range.first, range.second))
+    }
+
+    @Test
+    fun annotationRangeNeverFallsBackToAnUnrelatedPassage() {
+        assertNull(epubTextRange("正文已经替换", "原来的文字", 0.5))
+        assertNull(epubTextRange("正文", " \n\t", 0.0))
+        assertNull(epubTextRange("", "选文", 1.0))
+    }
+
+    @Test
+    fun annotationRangeChoosesTheNearestCompleteDuplicate() {
+        val text = "重复文字前段插入的说明文字重复文字"
+        assertEquals(0 to 4, epubTextRange(text, "重复文字", Double.NaN))
+        assertEquals(text.lastIndexOf("重复文字") to text.length,
+            epubTextRange(text, "重 复 文 字", 1.0))
+    }
+
+    @Test
+    fun readerTextConversionChangesOnlyBodyTextAndPreservesPublisherStylesAndLinks() {
+        val html = """<html><head><style>.正文{color:red}</style></head><body>
+            <p class="正文" id="正文">正文<b>正文</b></p><a href="正文.xhtml">正文</a></body></html>"""
+        val doc = Jsoup.parse(publisherDocument(html.toByteArray()) { it.replace("正文", "转换") }.toString(Charsets.UTF_8))
+        assertEquals("转换转换", doc.getElementById("正文")!!.text())
+        assertEquals("正文", doc.getElementById("正文")!!.className())
+        assertEquals("正文.xhtml", doc.selectFirst("a")!!.attr("href"))
+        assertEquals(".正文{color:red}", doc.selectFirst("style")!!.data())
+    }
 }

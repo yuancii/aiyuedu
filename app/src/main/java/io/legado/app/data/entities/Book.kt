@@ -521,7 +521,10 @@ data class Book(
         var manualReplaceRuleIds: List<Long> = emptyList(),
         // EPUB publisher rendering has its own DOM locator; native chapter identities stay intact.
         var epubUsePublisherLayout: Boolean = false,
-        var epubPublisherLocator: String? = null
+        var epubPublisherLocator: String? = null,
+        // DOM hints supplement the shared native annotation positions without a schema migration.
+        var epubPublisherAnchors: String? = null,
+        var epubPublisherStyleOverrides: List<String> = emptyList()
     ) : Parcelable
 
     class Converters {
