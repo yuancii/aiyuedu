@@ -137,8 +137,11 @@ abstract class HorizontalPageDelegate(readView: ReadView) : PageDelegate(readVie
             scroller.abortAnimation()
             if (!isCancel) {
                 readView.fillPage(mDirection)
-                readView.invalidate()
             }
+            // Clear the last animation frame even when the gesture was cancelled.
+            // Otherwise the clipped page snapshot can remain on screen over the live
+            // page until some unrelated redraw happens.
+            readView.invalidate()
         } else {
             readView.isAbortAnim = false
         }
