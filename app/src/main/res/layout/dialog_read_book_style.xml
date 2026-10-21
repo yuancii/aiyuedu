@@ -8,34 +8,41 @@
     android:background="@color/background"
     android:orientation="vertical">
 
-    <com.google.android.material.button.MaterialButtonToggleGroup
+    <RadioGroup
         android:id="@+id/epub_layout_modes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
-        android:visibility="gone"
-        app:singleSelection="true"
-        app:selectionRequired="true">
+        android:orientation="horizontal"
+        android:visibility="gone">
 
-        <com.google.android.material.button.MaterialButton
+        <io.legado.app.lib.theme.view.ThemeRadioNoButton
             android:id="@+id/epub_reader_mode"
-            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:button="@null"
+            android:gravity="center"
             android:minHeight="48dp"
-            android:text="@string/epub_switch_to_reader" />
+            android:paddingHorizontal="4dp"
+            android:text="@string/epub_switch_to_reader"
+            app:isBottomBackground="true" />
 
-        <com.google.android.material.button.MaterialButton
+        <io.legado.app.lib.theme.view.ThemeRadioNoButton
             android:id="@+id/epub_publisher_mode"
-            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:button="@null"
+            android:gravity="center"
             android:minHeight="48dp"
-            android:text="@string/epub_publisher_mode" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+            android:paddingHorizontal="4dp"
+            android:text="@string/epub_publisher_mode"
+            app:isBottomBackground="true" />
+    </RadioGroup>
 
     <HorizontalScrollView
         android:id="@+id/style_toolbar_scroll"

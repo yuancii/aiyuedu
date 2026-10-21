@@ -42,6 +42,7 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     private val callBack get() = activity as? ReadBookActivity
     private lateinit var styleAdapter: StyleAdapter
     private var updatingPageAnim = false
+    private var countedBottomDialog = false
 
     override fun onStart() {
         super.onStart()
@@ -58,7 +59,7 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        (activity as ReadBookActivity).bottomDialog++
+        callBack?.let { it.bottomDialog++; countedBottomDialog = true }
         initView()
         initData()
         initViewEvent()
@@ -67,7 +68,10 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         ReadBookConfig.save()
-        (activity as ReadBookActivity).bottomDialog--
+        if (countedBottomDialog) {
+            callBack?.let { it.bottomDialog-- }
+            countedBottomDialog = false
+        }
     }
 
     private fun initView() = binding.run {

@@ -39,6 +39,12 @@ try {
     // Keep source archives buildable when Git is unavailable.
 }
 def armOnly = project.findProperty("armOnly")?.toBoolean() ?: false
+// Optional smaller Debug delivery; the standard development build remains unminified.
+def compactDebug = project.findProperty("compactDebug")?.toBoolean() ?: false
+def targetAbi = project.findProperty("targetAbi")?.toString()
+if (targetAbi != null && !['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'].contains(targetAbi)) {
+    throw new GradleException("Unsupported targetAbi: $targetAbi")
+}
 
 android {
     compileSdk = compile_sdk_version
@@ -87,7 +93,11 @@ android {
         ]
         project.ext.set("archivesBaseName", name + "_" + version)
 
-        if (armOnly) {
+        if (targetAbi != null) {
+            ndk {
+                abiFilters targetAbi
+            }
+        } else if (armOnly) {
             ndk {
                 abiFilters 'arm64-v8a', 'armeabi-v7a'
             }
@@ -136,7 +146,8 @@ android {
 
             applicationIdSuffix '.debug'
             versionNameSuffix 'debug'
-            minifyEnabled false
+            minifyEnabled compactDebug
+            shrinkResources compactDebug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'cronet-proguard-rules.pro'
         }
     }
