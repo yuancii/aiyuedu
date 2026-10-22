@@ -1,6 +1,6 @@
 # aiyuedu 正式版发布说明
 
-本页说明本项目计划发布的正式版源码及其与上游原版的区别。**正式版 APK 尚未上传**；历史调试 APK 不对应本次源码，请勿作为正式版分发。APK 发布时应标明它对应的源码提交、版本号及文件校验值。
+本页说明 [aiyuedu 3.26102211 正式版](https://github.com/yuancii/aiyuedu/releases/tag/v3.26102211) 与上游原版的区别。APK 为 `aiyuedu-3.26102211-release.apk`，包名 `com.legado.app.release`，版本号 `37556`，对应源码提交 [`f4432c08b`](https://github.com/yuancii/aiyuedu/commit/f4432c08b9bcb4b3ad6b18ccbbdf81a282f7b41c)。文件 SHA-256：`C1B47331DB98E8AF30013069B145FAAA336D4B79BD13CF4A1392AA1F3D208C07`。历史调试 APK 不对应本次正式版。
 
 ## 与 Legado 原版的关系
 

@@ -173,7 +173,7 @@
 
 ## 下载
 
-历史调试包见本仓库的 [Releases](https://github.com/yuancii/aiyuedu/releases) 页面。正式版 APK 将在与对应源码核对并测试后单独发布；不要将历史调试包当作本次正式版。
+最新正式版：[aiyuedu 3.26102211](https://github.com/yuancii/aiyuedu/releases/tag/v3.26102211)，对应源码提交 [`f4432c08b`](https://github.com/yuancii/aiyuedu/commit/f4432c08b9bcb4b3ad6b18ccbbdf81a282f7b41c)。历史调试包仍保留在 [Releases](https://github.com/yuancii/aiyuedu/releases) 页面，并标记为预发布版本；不要将其与本次正式版混淆。
 
 ---
 
