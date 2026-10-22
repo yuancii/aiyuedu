@@ -4,11 +4,11 @@
 [![Release](https://img.shields.io/github/v/release/yuancii/aiyuedu?include_prereleases&label=release)](https://github.com/yuancii/aiyuedu/releases)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://developer.android.com/)
 
-基于 [LegadoTeam/legado](https://github.com/LegadoTeam/legado) 的个人修改版调试构建。
+基于 [LegadoTeam/legado](https://github.com/LegadoTeam/legado) 的个人学习与研究项目。仓库中的“正式版”仅指本项目自行发布的稳定版本，并非 Legado 官方版本。
 
 > ⚠️ **本项目与 Legado 官方无关**，不是官方版本，请勿混淆。
 >
-> 📄 完整免责声明：[DISCLAIMER.md](DISCLAIMER.md)　·　上游原始 README：[README-legado.md](README-legado.md)　·　更新日志：[CHANGELOG.md](CHANGELOG.md)
+> 📄 [本项目发布说明](RELEASE_NOTES.md)　·　[完整免责声明](DISCLAIMER.md)　·　[上游原始 README](README-legado.md)　·　[更新日志](CHANGELOG.md)
 
 ---
 
@@ -33,6 +33,18 @@
 ---
 
 ## 与上游的差异
+
+以下“原版”指上表所列的 Legado 上游基线，不代表上游项目后续版本的状态。本项目正式版源码在该基线上保留原阅读器排版，并包含下列修改：
+
+| 项目 | Legado 上游基线 | 本项目正式版源码 |
+|---|---|---|
+| 首页底栏 | Material 底栏 | 可调节的悬浮液态玻璃底栏、胶囊点击与拖动动效 |
+| 文本高亮 | 上游选区操作 | 调整选区清除高亮样式及笔记保留行为 |
+| Android 版本 | 最低 Android 6.0（API 23） | 最低 Android 8.0（API 26） |
+| Firebase | 上游构建配置 | 默认不启用；开发者可自行提供配置文件启用 |
+| 关于 → 开发人员 | 上游贡献者页面 | 本项目 GitHub 仓库 |
+
+10 月 21 日测试版加入的 EPUB“书籍原排版”因分页和动画问题已回退，**不包含在本次正式版源码中**。
 
 ### 一、悬浮液态玻璃底栏
 
@@ -155,18 +167,18 @@
 
 **Android Studio**：`构建 → Generate App Bundles or APKs → Generate APKs`
 
-> **Firebase 配置不在仓库内**：本仓库已移除 `app/google-services.json`，并把它加入 `.gitignore`。如需统计/性能数据，请把自己 Firebase 项目的 `google-services.json` 放到 `app/` 目录（不会被提交），否则构建会报 `File google-services.json is missing`。切勿使用他人项目的凭据。
+> **Firebase 配置可选**：本仓库已移除 `app/google-services.json`，并把它加入 `.gitignore`。不提供该文件时，构建会跳过 Google Services 插件和 Firebase 依赖；如需统计/性能数据，请把自己 Firebase 项目的 `google-services.json` 放到 `app/` 目录（不会被提交）。切勿使用他人项目的凭据。
 
 ---
 
 ## 下载
 
-调试包见本仓库的 **Releases** 页面。
+历史调试包见本仓库的 [Releases](https://github.com/yuancii/aiyuedu/releases) 页面。正式版 APK 将在与对应源码核对并测试后单独发布；不要将历史调试包当作本次正式版。
 
 ---
 
 ## 免责声明
 
-本项目为个人学习与自用目的的修改版，按 GPL-3.0 的 **「无担保」** 条款提供，作者不对使用后果承担任何责任。请勿将其用于任何违反当地法律法规的用途。
+本项目仅以个人学习、研究与自用为维护目的，与 Legado 官方无关；这不限制 GPL-3.0 授予的使用、修改和再分发权利。软件按许可证的**无担保**条款提供，使用者应自行核实内容来源并遵守适用法律及第三方网站规则。
 
 📄 **完整免责声明（版权、书源、隐私、使用限制等条款）：[DISCLAIMER.md](DISCLAIMER.md)**
