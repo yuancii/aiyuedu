@@ -330,18 +330,6 @@ interface BookDao {
     @Query("update books set readConfig = :readConfig where bookUrl = :bookUrl")
     fun updateReadConfigJson(bookUrl: String, readConfig: String?)
 
-    @Query("UPDATE books SET durChapterIndex = :chapterIndex, durChapterPos = :position, durChapterTitle = :title, durChapterTime = :time WHERE bookUrl = :bookUrl")
-    fun updateEpubPublisherProgress(bookUrl: String, chapterIndex: Int, position: Int, title: String?, time: Long)
-
-    @Transaction
-    fun updateEpubPublisherState(bookUrl: String, enabled: Boolean, locator: String?, chapterIndex: Int, position: Int, title: String?) {
-        val config = getReadConfigJson(bookUrl)
-            .withReadConfigProperty("epubUsePublisherLayout", JsonPrimitive(enabled))
-            .withReadConfigProperty("epubPublisherLocator", com.google.gson.JsonPrimitive(locator.orEmpty()))
-        updateReadConfigJson(bookUrl, config)
-        updateEpubPublisherProgress(bookUrl, chapterIndex, position, title, System.currentTimeMillis())
-    }
-
     @Transaction
     fun updatePreservingReadConfig(book: Book) {
         val readConfig = getReadConfigJson(book.bookUrl)

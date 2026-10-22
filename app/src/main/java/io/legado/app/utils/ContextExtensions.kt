@@ -41,7 +41,6 @@ import io.legado.app.constant.AppConst
 import io.legado.app.data.entities.Book
 import io.legado.app.help.IntentHelp
 import io.legado.app.help.book.isAudio
-import io.legado.app.help.book.isEpub
 import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isVideo

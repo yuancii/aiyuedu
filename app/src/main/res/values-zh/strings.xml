@@ -1749,11 +1749,4 @@
     <string name="reimport_book_source">重新导入本书书源</string>
     <string name="customize_my">自定义我的页面</string>
     <string name="my_more_items">将选中的功能放入更多</string>
-    <string name="epub_switch_to_publisher">EPUB：书籍原排版</string>
-    <string name="epub_switch_to_reader">阅读器排版</string>
-    <string name="epub_publisher_help">书籍原排版</string>
-    <string name="epub_publisher_mode">书籍原排版</string>
-    <string name="epub_publisher_error">无法显示书籍原排版：%s。可切换到阅读器排版。</string>
-    <string name="epub_previous_document">上一节</string>
-    <string name="epub_next_document">下一节</string>
 </resources>

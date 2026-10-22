@@ -132,8 +132,6 @@ class ReadView(context: Context, attrs: AttributeSet) :
     FrameLayout(context, attrs),
     DataSource, LayoutProgressListener {
 
-    var externalRendererActive = false
-
     val callBack: CallBack get() = activity as CallBack
     var pageFactory: TextPageFactory = TextPageFactory(this)
     var pageDelegate: PageDelegate? = null
@@ -1120,8 +1118,6 @@ class ReadView(context: Context, attrs: AttributeSet) :
     }
 
     fun updateScrollReadPosition(preserveText: Boolean = false) {
-        // The embedded EPUB renderer owns progress while the native page is hidden.
-        if (externalRendererActive) return
         // The configured mode may already have changed; capture the page still on screen.
         if (ReadBook.msg != null || !ReadBook.isLayoutAvailable) return
         // A replacement chapter can finish before its final UI bind runs.

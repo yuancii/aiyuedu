@@ -137,9 +137,6 @@
             android:windowSoftInputMode="adjustResize" />
         <!-- 阅读界面 -->
         <activity
-            android:name=".ui.book.read.EpubPublisherActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.book.read.ReadBookActivity"
             android:configChanges="locale|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"

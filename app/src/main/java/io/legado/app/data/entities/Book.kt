@@ -518,13 +518,7 @@ data class Book(
         var playSpeed: Float = 1.0f,     //音频播放速度
         var useGlobalAudioSkip: Boolean = false,
         // 阅读页手动选择的替换规则；旧书籍配置缺失时保持空集合。
-        var manualReplaceRuleIds: List<Long> = emptyList(),
-        // EPUB publisher rendering has its own DOM locator; native chapter identities stay intact.
-        var epubUsePublisherLayout: Boolean = false,
-        var epubPublisherLocator: String? = null,
-        // DOM hints supplement the shared native annotation positions without a schema migration.
-        var epubPublisherAnchors: String? = null,
-        var epubPublisherStyleOverrides: List<String> = emptyList()
+        var manualReplaceRuleIds: List<Long> = emptyList()
     ) : Parcelable
 
     class Converters {
