@@ -1,7 +1,7 @@
 [versions]
 
-kotlin = "2.4.10"
-ksp = "2.3.11"
+kotlin = "2.4.21"
+ksp = "2.3.12"
 agp = "8.13.2"
 # backdrop 1.0.6 是纯 Android AAR 发布（minCompileSdk=36 / minAGP=1.0.0），
 # 直接依赖 androidx Compose 1.10.3（minCompileSdk=35 / minAGP=8.6.0），与 Legado 的
