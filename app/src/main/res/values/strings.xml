@@ -1742,22 +1742,50 @@
     <string name="bottom_bar_glass_alpha_summary">0 = fully transparent, 100 = opaque</string>
     <string name="bottom_bar_glass_blur">Bottom bar glass blur</string>
     <string name="bottom_bar_glass_blur_summary">0 = sharp, larger = blurrier</string>
+    <string name="bottom_bar_refraction">Glass refraction</string>
+    <string name="bottom_bar_refraction_summary">Edge distortion in dp; 0 = off</string>
+    <string name="bottom_bar_chromatic">Glass chromatic dispersion</string>
+    <string name="bottom_bar_chromatic_summary">Color separation at the bar edge and in text viewed through the dragged capsule</string>
+    <string name="bottom_bar_capsule_drag_refraction">Capsule drag lens</string>
+    <string name="bottom_bar_capsule_drag_refraction_summary">Water droplet edge distortion while dragging; 0 = no refraction, magnification is adjusted separately</string>
+    <string name="bottom_bar_capsule_content_scale">Capsule content magnification</string>
+    <string name="bottom_bar_capsule_content_scale_summary">Magnify page text beneath the dragged capsule; 100% = original size, independent of icon zoom</string>
+    <string name="bottom_bar_edge_light">Glass edge highlight</string>
+    <string name="bottom_bar_edge_light_summary">0 = off, 100 = brightest</string>
+    <string name="bottom_bar_capsule_edge_light">Capsule edge highlight</string>
+    <string name="bottom_bar_capsule_edge_light_summary">White rim and color fringe intensity; 0 = off</string>
     <string name="bottom_bar_height">Bottom bar height</string>
     <string name="bottom_bar_height_summary">Height of the floating bottom bar (dp)</string>
+    <string name="bottom_bar_corner_radius">Bar corner radius</string>
+    <string name="bottom_bar_corner_radius_summary">0 = square corners; larger = rounder (dp)</string>
     <string name="bottom_bar_margin">Bottom bar horizontal margin</string>
     <string name="bottom_bar_margin_summary">Smaller = wider bar (dp)</string>
     <string name="bottom_bar_indicator_width">Indicator width</string>
     <string name="bottom_bar_indicator_width_summary">Selected capsule width, % of one slot</string>
     <string name="bottom_bar_magnify">Icon zoom</string>
     <string name="bottom_bar_magnify_summary">Enlarge icons near the capsule while pressing (100% = off)</string>
+    <string name="bottom_bar_capsule_color">Capsule color</string>
+    <string name="bottom_bar_capsule_color_summary">Transparent = automatic neutral tint for light/dark theme</string>
+    <string name="bottom_bar_capsule_opacity">Capsule opacity</string>
+    <string name="bottom_bar_capsule_opacity_summary">0 = invisible, 100 = strongest fill</string>
+    <string name="bottom_bar_capsule_press_scale">Capsule press size</string>
+    <string name="bottom_bar_capsule_press_scale_summary">100% = no zoom; drag zoom is gentler</string>
+    <string name="bottom_bar_capsule_bounce">Capsule bounce</string>
+    <string name="bottom_bar_capsule_bounce_summary">0 = no overshoot; higher = more spring</string>
+    <string name="bottom_bar_shake">Bar shake</string>
+    <string name="bottom_bar_shake_summary">Whole bar shake on press in dp; 0 = off</string>
+    <string name="bottom_bar_follow">Bar follows drag</string>
+    <string name="bottom_bar_follow_summary">Whole bar drag movement in percent; 0 = fixed bar</string>
+    <string name="bottom_bar_press_scale">Bar press size</string>
+    <string name="bottom_bar_press_scale_summary">100% = fixed bar, 110% = largest zoom</string>
     <string name="bottom_bar_surface_color">Bar color</string>
-    <string name="bottom_bar_surface_color_summary">Tint of the glass surface; transparent follows the theme (opacity unchanged)</string>
+    <string name="bottom_bar_surface_color_summary">Transparent follows the theme; color alpha also affects glass opacity</string>
     <string name="bottom_bar_capsule_speed">Capsule slide speed</string>
     <string name="bottom_bar_capsule_speed_summary">Speed of the capsule sliding to the tapped item; 50 = default feel</string>
-    <string name="bottom_bar_capsule_inset">Capsule vertical margin</string>
-    <string name="bottom_bar_capsule_inset_summary">Gap between the capsule and the bar\'s top/bottom edges; larger = shorter capsule</string>
+    <string name="bottom_bar_capsule_size">Capsule size</string>
+    <string name="bottom_bar_capsule_size_summary">Scales width and height together; over 100% can extend beyond the bar</string>
     <string name="bottom_bar_effect_color">Effect color</string>
-    <string name="bottom_bar_effect_color_summary">Color of the selection capsule and press glow</string>
+    <string name="bottom_bar_effect_color_summary">Press glow color; transparent follows the theme accent</string>
     <string name="bottom_bar_skin_assign">Assign Icons</string>
     <string name="bottom_bar_skin_name">Skin name</string>
     <string name="bottom_bar_skin_slot_selected">Selected</string>

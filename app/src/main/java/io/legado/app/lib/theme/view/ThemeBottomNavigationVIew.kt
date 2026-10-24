@@ -47,6 +47,9 @@ class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
     /** 抬起时的横向位置比例(0..1)，用于把选中项切到手指所在的那一格 */
     var onDragEnd: ((Float) -> Unit)? = null
 
+    /** 系统中断拖动时复原胶囊和底栏位置 */
+    var onDragCancel: (() -> Unit)? = null
+
     /** 按下位置与是否已判定为"拖动"（点击时不上报拖动位置，避免胶囊瞬移到手指处） */
     private var downX = 0f
     private var dragStarted = false
@@ -65,18 +68,32 @@ class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
                 // 超过 touchSlop 才算拖动；点击时胶囊保持原位，松手后再滑到目标格
                 if (!dragStarted && kotlin.math.abs(ev.x - downX) > touchSlop) {
                     dragStarted = true
+                    // 子项一旦收到取消事件，就不会在松手时再触发一次点击，
+                    // 避免手势切页后原始子项的 click 把页面切回去。
+                    val cancel = MotionEvent.obtain(ev)
+                    cancel.action = MotionEvent.ACTION_CANCEL
+                    super.dispatchTouchEvent(cancel)
+                    cancel.recycle()
                 }
-                if (dragStarted) onDragFractionChanged?.invoke(fraction)
+                if (dragStarted) {
+                    onDragFractionChanged?.invoke(fraction)
+                    return true
+                }
             }
 
             MotionEvent.ACTION_UP -> {
                 onPressChanged?.invoke(false)
-                onDragEnd?.invoke(fraction)
+                if (dragStarted) {
+                    onDragEnd?.invoke(fraction)
+                    dragStarted = false
+                    return true
+                }
                 dragStarted = false
             }
 
             MotionEvent.ACTION_CANCEL -> {
                 onPressChanged?.invoke(false)
+                if (dragStarted) onDragCancel?.invoke()
                 dragStarted = false
             }
         }

@@ -114,6 +114,25 @@ class ThemeConfigFragment : PreferenceFragment(),
                 }
             }
         }
+        // 透明黑是“跟随主题”；从透明默认色挑选色相时若仍带 0 Alpha，
+        // 自动改为不透明，避免用户选了颜色却只看到主题默认色。
+        for (key in arrayOf(
+            PreferKey.bottomBarSurfaceColor,
+            PreferKey.bottomBarCapsuleColor,
+            PreferKey.bottomBarEffectColor
+        )) {
+            findPreference<ColorPreference>(key)?.let { colorPreference ->
+                colorPreference.onSaveColor = { selected ->
+                    val visibleColor = if (selected != 0 && (selected ushr 24) == 0) {
+                        selected or 0xFF000000.toInt()
+                    } else {
+                        selected
+                    }
+                    colorPreference.saveValue(visibleColor)
+                    true
+                }
+            }
+        }
         findPreference<SwitchPreference>(PreferKey.wallpaperColorFollow)
             ?.setOnPreferenceChangeListener { _, newValue ->
                 val enabled = newValue as Boolean
@@ -216,13 +235,27 @@ class ThemeConfigFragment : PreferenceFragment(),
 
             PreferKey.bottomBarGlassAlpha,
             PreferKey.bottomBarGlassBlur,
+            PreferKey.bottomBarRefraction,
+            PreferKey.bottomBarCapsuleDragRefraction,
+            PreferKey.bottomBarCapsuleContentScale,
+            PreferKey.bottomBarChromatic,
+            PreferKey.bottomBarEdgeLight,
+            PreferKey.bottomBarCapsuleEdgeLight,
             PreferKey.bottomBarHeight,
+            PreferKey.bottomBarCornerRadius,
             PreferKey.bottomBarMargin,
             PreferKey.bottomBarIndicatorWidth,
             PreferKey.bottomBarMagnify,
             PreferKey.bottomBarSurfaceColor,
             PreferKey.bottomBarCapsuleSpeed,
-            PreferKey.bottomBarCapsuleInset,
+            PreferKey.bottomBarCapsuleSize,
+            PreferKey.bottomBarCapsuleColor,
+            PreferKey.bottomBarCapsuleOpacity,
+            PreferKey.bottomBarCapsulePressScale,
+            PreferKey.bottomBarCapsuleBounce,
+            PreferKey.bottomBarShake,
+            PreferKey.bottomBarFollow,
+            PreferKey.bottomBarPressScale,
             PreferKey.bottomBarEffectColor -> postEvent(EventBus.BOTTOM_BAR_GLASS, "")
         }
 

@@ -9,6 +9,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.Density
 import com.kyant.backdrop.Backdrop
+import io.legado.app.lib.theme.backgroundColor
 
 /**
  * 把目标 View（主 ViewPager）的绘制内容当作"背景层"采样。
@@ -22,7 +23,10 @@ import com.kyant.backdrop.Backdrop
  * 中断同一帧后续兄弟视图的绘制（表现为底栏图标整块消失）。
  * 因此这里必须吞掉所有异常——采样失败最多是"没有玻璃"，绝不能让界面残缺。
  */
-class ViewBackdrop(private val target: View) : Backdrop {
+class ViewBackdrop(
+    private val target: View,
+    private val magnification: Float = 1f
+) : Backdrop {
 
     override val isCoordinatesDependent: Boolean = true
 
@@ -37,16 +41,30 @@ class ViewBackdrop(private val target: View) : Backdrop {
             val coords = coordinates ?: return
             if (!coords.isAttached || !target.isAttachedToWindow) return
 
-            val barX = coords.positionInWindow().x
-            val barY = coords.positionInWindow().y
+            val origin = coords.positionInWindow()
             target.getLocationInWindow(targetLocation)
-            val dx = targetLocation[0] - barX
-            val dy = targetLocation[1] - barY
+            // View.draw 不会补偿目标自身的滚动。ViewPager 切到“我的”后
+            // scrollX 已经是数个屏宽，漏减它会采到空白或别的页面。
+            val dx = targetLocation[0] - origin.x - target.scrollX
+            val dy = targetLocation[1] - origin.y - target.scrollY
 
             drawIntoCanvas { canvas ->
                 val native = canvas.nativeCanvas
                 val save = native.save()
                 try {
+                    // 用当前背景与页面替换采样区，避免未放大的旧文字透出成重影。
+                    native.drawColor(target.context.backgroundColor)
+                    val scale = magnification.coerceIn(1f, 2f)
+                    if (scale > 1f) {
+                        // 先绕胶囊中心放大，再把页面移到采样位置。
+                        // 使用原始布局尺寸，不把折射效果的额外采样边距算进中心。
+                        native.scale(
+                            scale,
+                            scale,
+                            coords.size.width / 2f,
+                            coords.size.height / 2f
+                        )
+                    }
                     native.translate(dx, dy)
                     target.draw(native)
                 } finally {

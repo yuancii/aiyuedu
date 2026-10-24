@@ -295,16 +295,30 @@ object PreferKey {
     const val bottomBarSkin = "bottomBarSkin"
     const val bottomBarGlassAlpha = "bottomBarGlassAlpha"
     const val bottomBarGlassBlur = "bottomBarGlassBlur"
+    const val bottomBarRefraction = "bottomBarRefraction"
+    const val bottomBarCapsuleDragRefraction = "bottomBarCapsuleDragRefraction"
+    const val bottomBarCapsuleContentScale = "bottomBarCapsuleContentScale"
+    const val bottomBarChromatic = "bottomBarChromatic"
+    const val bottomBarEdgeLight = "bottomBarEdgeLight"
+    const val bottomBarCapsuleEdgeLight = "bottomBarCapsuleEdgeLight"
     const val bottomBarHeight = "bottomBarHeight"
+    const val bottomBarCornerRadius = "bottomBarCornerRadius"
     const val bottomBarMargin = "bottomBarMargin"
     const val bottomBarIndicatorWidth = "bottomBarIndicatorWidth"
-    /** 胶囊放大倍率（100 = 关闭，200 = 2 倍）。按住底栏时放大胶囊下方的页面内容。 */
+    /** 图标放大倍率（100 = 关闭，200 = 2 倍）。按住底栏时放大胶囊附近的图标。 */
     const val bottomBarMagnify = "bottomBarMagnify"
     const val bottomBarEffectColor = "bottomBarEffectColor"
-    /** 底栏玻璃底色（0 = 跟随主题）。只决定色相，透明度由 bottomBarGlassAlpha 控制。 */
+    const val bottomBarCapsuleColor = "bottomBarCapsuleColor"
+    const val bottomBarCapsuleOpacity = "bottomBarCapsuleOpacity"
+    const val bottomBarCapsulePressScale = "bottomBarCapsulePressScale"
+    const val bottomBarCapsuleBounce = "bottomBarCapsuleBounce"
+    const val bottomBarShake = "bottomBarShake"
+    const val bottomBarFollow = "bottomBarFollow"
+    const val bottomBarPressScale = "bottomBarPressScale"
+    /** 底栏玻璃底色（0 = 跟随主题）；颜色 alpha 与 bottomBarGlassAlpha 相乘。 */
     const val bottomBarSurfaceColor = "bottomBarSurfaceColor"
     /** 胶囊滑动速度 0-100，映射为 spring 刚度（默认 50 → 420，与旧手感一致） */
     const val bottomBarCapsuleSpeed = "bottomBarCapsuleSpeed"
-    /** 胶囊与底栏上下边缘的距离(dp)，越大胶囊越矮 */
-    const val bottomBarCapsuleInset = "bottomBarCapsuleInset"
+    /** 胶囊整体尺寸百分比，宽高同时按比例变化 */
+    const val bottomBarCapsuleSize = "bottomBarCapsuleSize"
 }

@@ -70,7 +70,7 @@
     <!-- 底栏调节项：竖排布局，文字在上、进度条在下 -->
     <io.legado.app.lib.prefs.VerticalSeekBarPreference
         android:clickable="false"
-        android:defaultValue="80"
+        android:defaultValue="55"
         android:key="bottomBarGlassAlpha"
         android:summary="@string/bottom_bar_glass_alpha_summary"
         android:title="@string/bottom_bar_glass_alpha"
@@ -83,11 +83,83 @@
 
     <io.legado.app.lib.prefs.VerticalSeekBarPreference
         android:clickable="false"
-        android:defaultValue="24"
+        android:defaultValue="16"
         android:key="bottomBarGlassBlur"
         android:summary="@string/bottom_bar_glass_blur_summary"
         android:title="@string/bottom_bar_glass_blur"
         app:MaxValue="60"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="18"
+        android:key="bottomBarRefraction"
+        android:summary="@string/bottom_bar_refraction_summary"
+        android:title="@string/bottom_bar_refraction"
+        app:MaxValue="40"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.SwitchPreference
+        android:defaultValue="true"
+        android:key="bottomBarChromatic"
+        android:summary="@string/bottom_bar_chromatic_summary"
+        android:title="@string/bottom_bar_chromatic"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="20"
+        android:key="bottomBarCapsuleDragRefraction"
+        android:summary="@string/bottom_bar_capsule_drag_refraction_summary"
+        android:title="@string/bottom_bar_capsule_drag_refraction"
+        app:MaxValue="40"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="145"
+        android:key="bottomBarCapsuleContentScale"
+        android:summary="@string/bottom_bar_capsule_content_scale_summary"
+        android:title="@string/bottom_bar_capsule_content_scale"
+        app:MaxValue="200"
+        app:MinValue="100"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="55"
+        android:key="bottomBarEdgeLight"
+        android:summary="@string/bottom_bar_edge_light_summary"
+        android:title="@string/bottom_bar_edge_light"
+        app:MaxValue="100"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="55"
+        android:key="bottomBarCapsuleEdgeLight"
+        android:summary="@string/bottom_bar_capsule_edge_light_summary"
+        android:title="@string/bottom_bar_capsule_edge_light"
+        app:MaxValue="100"
         app:MinValue="0"
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
@@ -102,6 +174,19 @@
         android:title="@string/bottom_bar_height"
         app:MaxValue="96"
         app:MinValue="40"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="28"
+        android:key="bottomBarCornerRadius"
+        android:summary="@string/bottom_bar_corner_radius_summary"
+        android:title="@string/bottom_bar_corner_radius"
+        app:MaxValue="48"
+        app:MinValue="0"
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:iconSpaceReserved="false"
@@ -135,7 +220,7 @@
 
     <io.legado.app.lib.prefs.VerticalSeekBarPreference
         android:clickable="false"
-        android:defaultValue="100"
+        android:defaultValue="115"
         android:key="bottomBarMagnify"
         android:summary="@string/bottom_bar_magnify_summary"
         android:title="@string/bottom_bar_magnify"
@@ -147,14 +232,39 @@
         app:selectable="false" />
 
     <io.legado.app.lib.prefs.ColorPreference
-        android:defaultValue="@color/md_red_600"
+        android:defaultValue="@android:color/transparent"
         android:key="bottomBarEffectColor"
         android:summary="@string/bottom_bar_effect_color_summary"
         android:title="@string/bottom_bar_effect_color"
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:cpv_dialogType="preset"
+        app:cpv_showAlphaSlider="true"
         app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.ColorPreference
+        android:defaultValue="@android:color/transparent"
+        android:key="bottomBarCapsuleColor"
+        android:summary="@string/bottom_bar_capsule_color_summary"
+        android:title="@string/bottom_bar_capsule_color"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:cpv_dialogType="preset"
+        app:cpv_showAlphaSlider="true"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="30"
+        android:key="bottomBarCapsuleOpacity"
+        android:summary="@string/bottom_bar_capsule_opacity_summary"
+        android:title="@string/bottom_bar_capsule_opacity"
+        app:MaxValue="100"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
 
     <io.legado.app.lib.prefs.ColorPreference
         android:defaultValue="@android:color/transparent"
@@ -164,6 +274,7 @@
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:cpv_dialogType="preset"
+        app:cpv_showAlphaSlider="true"
         app:iconSpaceReserved="false" />
 
     <io.legado.app.lib.prefs.VerticalSeekBarPreference
@@ -181,12 +292,77 @@
 
     <io.legado.app.lib.prefs.VerticalSeekBarPreference
         android:clickable="false"
-        android:defaultValue="11"
-        android:key="bottomBarCapsuleInset"
-        android:summary="@string/bottom_bar_capsule_inset_summary"
-        android:title="@string/bottom_bar_capsule_inset"
-        app:MaxValue="24"
+        android:defaultValue="100"
+        android:key="bottomBarCapsuleSize"
+        android:summary="@string/bottom_bar_capsule_size_summary"
+        android:title="@string/bottom_bar_capsule_size"
+        app:MaxValue="125"
+        app:MinValue="60"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="120"
+        android:key="bottomBarCapsulePressScale"
+        android:summary="@string/bottom_bar_capsule_press_scale_summary"
+        android:title="@string/bottom_bar_capsule_press_scale"
+        app:MaxValue="150"
+        app:MinValue="100"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="35"
+        android:key="bottomBarCapsuleBounce"
+        android:summary="@string/bottom_bar_capsule_bounce_summary"
+        android:title="@string/bottom_bar_capsule_bounce"
+        app:MaxValue="100"
         app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="0"
+        android:key="bottomBarShake"
+        android:summary="@string/bottom_bar_shake_summary"
+        android:title="@string/bottom_bar_shake"
+        app:MaxValue="12"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="0"
+        android:key="bottomBarFollow"
+        android:summary="@string/bottom_bar_follow_summary"
+        android:title="@string/bottom_bar_follow"
+        app:MaxValue="30"
+        app:MinValue="0"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:selectable="false" />
+
+    <io.legado.app.lib.prefs.VerticalSeekBarPreference
+        android:clickable="false"
+        android:defaultValue="100"
+        android:key="bottomBarPressScale"
+        android:summary="@string/bottom_bar_press_scale_summary"
+        android:title="@string/bottom_bar_press_scale"
+        app:MaxValue="110"
+        app:MinValue="100"
         app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:iconSpaceReserved="false"

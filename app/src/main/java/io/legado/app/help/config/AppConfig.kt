@@ -3,9 +3,7 @@ package io.legado.app.help.config
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.os.Build
-import androidx.core.content.ContextCompat
 import io.legado.app.BuildConfig
-import io.legado.app.R
 import io.legado.app.constant.AppConst
 import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
@@ -465,16 +463,57 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     /** 悬浮底栏玻璃透明度(0-100)，100 为完全不透明 */
     var bottomBarGlassAlpha: Int
-        get() = appCtx.getPrefInt(PreferKey.bottomBarGlassAlpha, 80)
+        get() = appCtx.getPrefInt(PreferKey.bottomBarGlassAlpha, 55)
         set(value) {
             appCtx.putPrefInt(PreferKey.bottomBarGlassAlpha, value.coerceIn(0, 100))
         }
 
     /** 悬浮底栏玻璃模糊半径(dp)，0 表示不模糊 */
     var bottomBarGlassBlur: Int
-        get() = appCtx.getPrefInt(PreferKey.bottomBarGlassBlur, 24)
+        get() = appCtx.getPrefInt(PreferKey.bottomBarGlassBlur, 16)
         set(value) {
             appCtx.putPrefInt(PreferKey.bottomBarGlassBlur, value.coerceIn(0, 60))
+        }
+
+    /** 玻璃边缘折射范围与强度(dp)，0 关闭折射 */
+    var bottomBarRefraction: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarRefraction, 18)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarRefraction, value.coerceIn(0, 40))
+        }
+
+    /** 拖动胶囊时，对胶囊下方页面内容的水滴折射强度(dp) */
+    var bottomBarCapsuleDragRefraction: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleDragRefraction, 20)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleDragRefraction, value.coerceIn(0, 40))
+        }
+
+    /** 拖动胶囊内的页面内容放大倍率，100 为原始大小 */
+    var bottomBarCapsuleContentScale: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleContentScale, 145)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleContentScale, value.coerceIn(100, 200))
+        }
+
+    var bottomBarChromatic: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.bottomBarChromatic, true)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.bottomBarChromatic, value)
+        }
+
+    /** 玻璃边缘镜面高光强度，0 关闭 */
+    var bottomBarEdgeLight: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarEdgeLight, 55)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarEdgeLight, value.coerceIn(0, 100))
+        }
+
+    /** 选中胶囊边缘高光强度，0 关闭 */
+    var bottomBarCapsuleEdgeLight: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleEdgeLight, 55)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleEdgeLight, value.coerceIn(0, 100))
         }
 
     /** 悬浮底栏高度(dp) */
@@ -482,6 +521,12 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         get() = appCtx.getPrefInt(PreferKey.bottomBarHeight, 56)
         set(value) {
             appCtx.putPrefInt(PreferKey.bottomBarHeight, value.coerceIn(40, 96))
+        }
+
+    var bottomBarCornerRadius: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCornerRadius, 28)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCornerRadius, value.coerceIn(0, 48))
         }
 
     /** 悬浮底栏左右外边距(dp)，越小底栏越宽 */
@@ -500,14 +545,14 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     /** 图标放大倍率（百分比）：100 = 不放大，按住/拖动底栏时放大胶囊附近的图标。 */
     var bottomBarMagnify: Int
-        get() = appCtx.getPrefInt(PreferKey.bottomBarMagnify, 100)
+        get() = appCtx.getPrefInt(PreferKey.bottomBarMagnify, 115)
         set(value) {
             appCtx.putPrefInt(PreferKey.bottomBarMagnify, value.coerceIn(100, 200))
         }
 
     /**
      * 底栏玻璃底色：0（或 alpha=0）= 跟随主题（浅色白 / 深色近黑）。
-     * 只决定色相，透明度仍由 [bottomBarGlassAlpha] 控制。
+     * 颜色自身 alpha 与 [bottomBarGlassAlpha] 相乘。
      */
     var bottomBarSurfaceColor: Int
         get() = appCtx.getPrefInt(PreferKey.bottomBarSurfaceColor, 0)
@@ -522,19 +567,63 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.bottomBarCapsuleSpeed, value.coerceIn(0, 100))
         }
 
-    /** 胶囊与底栏上下边缘的距离(dp)，越大胶囊越矮 */
-    var bottomBarCapsuleInset: Int
-        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleInset, 11)
+    /** 胶囊整体尺寸百分比；同时改变宽高，保留椭圆比例 */
+    var bottomBarCapsuleSize: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleSize, 100)
         set(value) {
-            appCtx.putPrefInt(PreferKey.bottomBarCapsuleInset, value.coerceIn(0, 24))
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleSize, value.coerceIn(60, 125))
         }
 
-    /** 悬浮底栏动效颜色（选中胶囊 + 按压光晕） */
+    /** 0 = 按浅色/深色主题自动选择中性胶囊颜色 */
+    var bottomBarCapsuleColor: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleColor, 0)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleColor, value)
+        }
+
+    var bottomBarCapsuleOpacity: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleOpacity, 30)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleOpacity, value.coerceIn(0, 100))
+        }
+
+    var bottomBarCapsulePressScale: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsulePressScale, 120)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsulePressScale, value.coerceIn(100, 150))
+        }
+
+    /** 胶囊到达目标位置后的回弹强度，0 无回弹 */
+    var bottomBarCapsuleBounce: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarCapsuleBounce, 35)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarCapsuleBounce, value.coerceIn(0, 100))
+        }
+
+    /** 整条底栏按下时左右晃动的幅度(dp) */
+    var bottomBarShake: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarShake, 0)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarShake, value.coerceIn(0, 12))
+        }
+
+    /** 整条底栏拖动时随手指位移的百分比 */
+    var bottomBarFollow: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarFollow, 0)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarFollow, value.coerceIn(0, 30))
+        }
+
+    /** 整条底栏按下时的放大倍率，100 = 关闭 */
+    var bottomBarPressScale: Int
+        get() = appCtx.getPrefInt(PreferKey.bottomBarPressScale, 100)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.bottomBarPressScale, value.coerceIn(100, 110))
+        }
+
+    /** 悬浮底栏动效颜色；0 = 使用当前主题强调色 */
     var bottomBarEffectColor: Int
-        get() = appCtx.getPrefInt(
-            PreferKey.bottomBarEffectColor,
-            ContextCompat.getColor(appCtx, R.color.md_red_600)
-        )
+        get() = appCtx.getPrefInt(PreferKey.bottomBarEffectColor, 0)
         set(value) {
             appCtx.putPrefInt(PreferKey.bottomBarEffectColor, value)
         }

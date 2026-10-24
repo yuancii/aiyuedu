@@ -10,10 +10,12 @@ import android.text.format.DateUtils
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.ScrollView
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
@@ -119,20 +121,31 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private var bottomMenuCount = 4
     private val EXIT_INTERVAL = 2000L
     /** 悬浮底栏玻璃表面透明度 0~255，来源 AppConfig.bottomBarGlassAlpha */
-    private val glassSurfaceAlpha = mutableStateOf(204)
+    private val glassSurfaceAlpha = mutableStateOf(140)
     /** 底栏玻璃底色（0 = 跟随主题），来源 AppConfig.bottomBarSurfaceColor */
     private val bottomBarSurfaceTint = mutableStateOf(0)
     /** 胶囊滑动速度 0~100，来源 AppConfig.bottomBarCapsuleSpeed */
     private val bottomBarCapsuleSpeed = mutableStateOf(50)
-    /** 胶囊上下边距(dp)，来源 AppConfig.bottomBarCapsuleInset */
-    private val bottomBarCapsuleInset = mutableStateOf(11)
+    /** 胶囊宽高的共同缩放百分比 */
+    private val bottomBarCapsuleSize = mutableStateOf(100)
+    private val bottomBarCapsuleTint = mutableStateOf(0)
+    private val bottomBarCapsuleOpacity = mutableStateOf(30)
+    private val bottomBarCapsulePressScale = mutableStateOf(120)
+    private val bottomBarCapsuleBounce = mutableStateOf(35)
+    private val bottomBarRefraction = mutableStateOf(18)
+    private val bottomBarCapsuleDragRefraction = mutableStateOf(20)
+    private val bottomBarCapsuleContentScale = mutableStateOf(145)
+    private val bottomBarChromatic = mutableStateOf(true)
+    private val bottomBarEdgeLight = mutableStateOf(55)
+    private val bottomBarCapsuleEdgeLight = mutableStateOf(55)
+    private val bottomBarCornerRadius = mutableStateOf(28)
     /** 底栏抖动/位移动效：按下时的左右抖动动画 */
     private var barShakeAnimator: ValueAnimator? = null
     /** 拖动跟随：每帧向目标靠拢的循环动画（"一直"缓慢跟随，不设结束时长） */
     private var barFollowAnimator: ValueAnimator? = null
     private var barFollowTargetX = 0f
     /** 悬浮底栏玻璃模糊半径(dp)，来源 AppConfig.bottomBarGlassBlur */
-    private val glassBlurDp = mutableStateOf(24)
+    private val glassBlurDp = mutableStateOf(16)
     /** 选中胶囊宽度（占单格百分比），来源 AppConfig.bottomBarIndicatorWidth */
     private val indicatorWidthPercent = mutableStateOf(82)
     /** 内容区滚动控件的原始底部 padding，用于叠加底栏留白而不重复累加 */
@@ -145,8 +158,14 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private val bottomBarPressed = mutableStateOf(false)
     /** 拖动底栏时手指的横向比例(0..1)；-1 表示当前不在拖动 */
     private val bottomBarDragFraction = mutableStateOf(-1f)
-    /** 底栏动效颜色（选中胶囊 + 按压光晕），来源 AppConfig.bottomBarEffectColor */
+    /** 底栏强调色（光晕），0 表示跟随主题 */
     private val bottomBarEffectColor = mutableStateOf(0)
+    /** ViewPager 页面/滚动变化时重建背景采样，避免留用上一页的纹理 */
+    private val bottomBarBackdropRevision = mutableStateOf(0)
+    private var backdropObserver: ViewTreeObserver? = null
+    private val backdropScrollListener = ViewTreeObserver.OnScrollChangedListener {
+        bottomBarBackdropRevision.value++
+    }
     private val realPositions = arrayOf(idBookshelf, idExplore, idRss, idMy)
     private val menuIdToSlot = linkedMapOf(
         R.id.menu_bookshelf to "bookshelf",
@@ -224,6 +243,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     override fun onResume() {
         super.onResume()
+        // 设置页可能在主页暂停期间更新偏好；普通事件不会保证返回时补发。
+        upBottomBarGlass()
+        applyBottomBarLayout()
         if (SourceSharePassphraseImportPolicy.shouldScheduleOnResume(
                 privacyPolicyOk = LocalConfig.privacyPolicyOk
             )
@@ -333,6 +355,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             resetBarShift()
             resetBarScale()
         }
+        bottomNavigationView.onDragCancel = {
+            bottomBarDragFraction.value = -1f
+            bottomNavigationView.resetItemScale()
+            resetBarShift()
+            resetBarScale()
+        }
         if (AppConfig.isEInkMode) {
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
         }
@@ -362,11 +390,23 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun upBottomBarGlass() {
         glassSurfaceAlpha.value = AppConfig.bottomBarGlassAlpha.coerceIn(0, 100) * 255 / 100
         glassBlurDp.value = AppConfig.bottomBarGlassBlur.coerceIn(0, 60)
+        bottomBarRefraction.value = AppConfig.bottomBarRefraction
+        bottomBarCapsuleDragRefraction.value = AppConfig.bottomBarCapsuleDragRefraction
+        bottomBarCapsuleContentScale.value = AppConfig.bottomBarCapsuleContentScale.coerceIn(100, 200)
+        bottomBarChromatic.value = AppConfig.bottomBarChromatic
+        bottomBarEdgeLight.value = AppConfig.bottomBarEdgeLight
+        bottomBarCapsuleEdgeLight.value = AppConfig.bottomBarCapsuleEdgeLight
+        bottomBarCornerRadius.value = AppConfig.bottomBarCornerRadius
         bottomBarSurfaceTint.value = AppConfig.bottomBarSurfaceColor
         bottomBarCapsuleSpeed.value = AppConfig.bottomBarCapsuleSpeed.coerceIn(0, 100)
-        bottomBarCapsuleInset.value = AppConfig.bottomBarCapsuleInset.coerceIn(0, 24)
+        bottomBarCapsuleSize.value = AppConfig.bottomBarCapsuleSize
+        bottomBarCapsuleTint.value = AppConfig.bottomBarCapsuleColor
+        bottomBarCapsuleOpacity.value = AppConfig.bottomBarCapsuleOpacity
+        bottomBarCapsulePressScale.value = AppConfig.bottomBarCapsulePressScale
+        bottomBarCapsuleBounce.value = AppConfig.bottomBarCapsuleBounce
         indicatorWidthPercent.value = AppConfig.bottomBarIndicatorWidth.coerceIn(40, 120)
         bottomBarEffectColor.value = AppConfig.bottomBarEffectColor
+        bottomBarBackdropRevision.value++
     }
 
     /**
@@ -384,26 +424,65 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         } else {
             Color(0xFF121212)
         }
-        val backdrop = ViewBackdrop(binding.viewPagerMain)
+        val automaticCapsuleColor = if (glassBase == Color.White) {
+            Color(0xFF77818A)
+        } else {
+            Color(0xFFE8EDF2)
+        }
+        val themeEffectColor = Color(ThemeStore.accentColor(this))
+        binding.bottomBarGlass.clipChildren = false
+        binding.bottomBarGlass.clipToPadding = false
+        binding.viewPagerMain.viewTreeObserver.takeIf { it.isAlive }?.let { observer ->
+            observer.addOnScrollChangedListener(backdropScrollListener)
+            backdropObserver = observer
+        }
         binding.bottomBarGlass.setViewCompositionStrategy(
             ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool
         )
         binding.bottomBarGlass.setContent {
-            // 底色：自定义色（alpha>0）优先，否则沿用主题白/黑；透明度仍由设置项控制
+            val backdrop = remember(bottomBarBackdropRevision.value) {
+                ViewBackdrop(binding.viewPagerMain)
+            }
+            val capsuleBackdrop = remember(
+                bottomBarBackdropRevision.value,
+                bottomBarCapsuleContentScale.value
+            ) {
+                ViewBackdrop(
+                    binding.viewPagerMain,
+                    magnification = bottomBarCapsuleContentScale.value / 100f
+                )
+            }
+            // 底色：自定义色（alpha>0）优先，否则沿用主题白/黑。
             val surfaceTint = bottomBarSurfaceTint.value
-            val glassSurface = if ((surfaceTint ushr 24) != 0) Color(surfaceTint) else glassBase
+            val glassSurface = configuredBottomBarColor(surfaceTint, glassBase)
+            val capsuleTint = bottomBarCapsuleTint.value
+            val effectTint = bottomBarEffectColor.value
             BottomBarGlass(
                 backdrop = backdrop,
-                surfaceColor = glassSurface.copy(alpha = glassSurfaceAlpha.value / 255f),
+                capsuleBackdrop = capsuleBackdrop,
+                surfaceColor = glassSurface.copy(
+                    alpha = glassSurface.alpha * glassSurfaceAlpha.value / 255f
+                ),
                 blurRadius = glassBlurDp.value.dp,
-                indicatorColor = Color(bottomBarEffectColor.value),
+                indicatorColor = configuredBottomBarColor(effectTint, themeEffectColor),
+                capsuleColor = configuredBottomBarColor(capsuleTint, automaticCapsuleColor),
+                capsuleOpacity = bottomBarCapsuleOpacity.value,
+                refraction = bottomBarRefraction.value.dp,
+                capsuleDragRefraction = bottomBarCapsuleDragRefraction.value.dp,
+                capsuleContentScale = bottomBarCapsuleContentScale.value,
+                chromaticAberration = bottomBarChromatic.value,
+                edgeLight = bottomBarEdgeLight.value,
+                capsuleEdgeLight = bottomBarCapsuleEdgeLight.value,
+                capsulePressScale = bottomBarCapsulePressScale.value,
+                capsuleBounce = bottomBarCapsuleBounce.value,
+                cornerRadius = bottomBarCornerRadius.value.dp,
                 itemCount = bottomBarItemCount.value,
                 selectedIndex = bottomBarSelectedIndex.value,
                 pressed = bottomBarPressed.value,
                 indicatorWidthPercent = indicatorWidthPercent.value,
                 dragFraction = bottomBarDragFraction.value,
                 slideStiffness = 180f + bottomBarCapsuleSpeed.value * 4.8f,
-                capsuleInset = bottomBarCapsuleInset.value.dp
+                capsuleSizePercent = bottomBarCapsuleSize.value
             )
         }
         // 保险：Glass 的 Compose 内容首次测量若撑满可用高度，会把 wrap_content 的
@@ -416,13 +495,26 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
+    /** 透明黑为自动；透明但带色相的旧存储值按不透明颜色处理。 */
+    private fun configuredBottomBarColor(value: Int, fallback: Color): Color {
+        if (value == 0) return fallback
+        val opaqueIfUnsetAlpha = if ((value ushr 24) == 0) {
+            value or 0xFF000000.toInt()
+        } else {
+            value
+        }
+        return Color(opaqueIfUnsetAlpha)
+    }
+
     /**
      * 按下底栏时的左右抖动：阻尼衰减的一次横向摆动（整条底栏，含玻璃与图标）。
      */
     private fun shakeBar() {
         val bar = binding.bottomBarContainer
         barShakeAnimator?.cancel()
-        val amp = 6.dpToPx().toFloat()
+        val strength = AppConfig.bottomBarShake.coerceIn(0, 12)
+        if (strength == 0) return
+        val amp = strength.dpToPx().toFloat()
         val animator = ValueAnimator.ofFloat(
             0f, -amp, amp * 0.7f, -amp * 0.4f, amp * 0.15f, 0f
         ).apply {
@@ -436,16 +528,18 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * 拖动胶囊时，整条底栏朝胶囊所在的一侧**持续缓慢**滑一点。
      *
-     * 位移量 = 胶囊中心相对底栏中心的偏移 × 0.20，上限 ±36dp；
+     * 位移量和上限由用户设置控制；设为 0 时只移动胶囊，底栏保持固定。
      * 时长不设上限：拖动期间由一个循环 animator 每帧向目标靠拢（约 8%/帧），
      * 所以底栏会"一直"跟着走，松手才回位。
      */
     private fun shiftBar(fraction: Float) {
         val bar = binding.bottomBarContainer
         barShakeAnimator?.cancel()
+        val follow = AppConfig.bottomBarFollow.coerceIn(0, 30) / 100f
+        if (follow == 0f) return
         if (bar.width <= 0) return
-        val amp = 36.dpToPx().toFloat()
-        barFollowTargetX = ((fraction - 0.5f) * bar.width * 0.20f).coerceIn(-amp, amp)
+        val amp = 48.dpToPx().toFloat()
+        barFollowTargetX = ((fraction - 0.5f) * bar.width * follow).coerceIn(-amp, amp)
         if (barFollowAnimator == null) {
             barFollowAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = 1000
@@ -469,8 +563,10 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
      * 按下底栏时整条底栏轻微放大（胶囊停止/松手时复原）。
      */
     private fun scaleBarUp() {
+        val scale = AppConfig.bottomBarPressScale.coerceIn(100, 110) / 100f
+        if (scale == 1f) return
         binding.bottomBarContainer.animate()
-            .scaleX(1.025f).scaleY(1.025f)
+            .scaleX(scale).scaleY(scale)
             .setDuration(140)
             .start()
     }
@@ -557,6 +653,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 )
             }
         }
+    }
+
+    /** 子页面的滚动列表可能在 ViewPager 选中回调之后才创建。 */
+    internal fun requestContentBottomInset() {
+        binding.viewPagerMain.post { applyContentBottomInset() }
     }
 
     /** 底栏实际占用的高度 = 玻璃面板高度 + 下外边距(含导航栏高度) */
@@ -725,6 +826,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
     override fun onDestroy() {
+        backdropObserver?.takeIf { it.isAlive }
+            ?.removeOnScrollChangedListener(backdropScrollListener)
+        backdropObserver = null
         super.onDestroy()
         Coroutine.async {
             BookHelp.clearInvalidCache()
@@ -938,6 +1042,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
         override fun onPageSelected(position: Int) {
             pagePosition = position
+            bottomBarBackdropRevision.value++
+            // 新 Fragment 的布局可能晚于 onPageSelected，下一帧再采一次。
+            binding.viewPagerMain.post { bottomBarBackdropRevision.value++ }
             bottomBarSelectedIndex.value = position
             binding.bottomNavigationView.menu[realPositions[position]].isChecked = true
             binding.viewPagerMain.post { applyContentBottomInset() }
